@@ -10,15 +10,28 @@ function hyperspectral_image_GUI
     
     %% GUI properties
     
-    GUI.panel_size = [360 740]; % px
-    GUI.fig_size = [560 400] .* 0.75; % px
+    GUI.fig_size_basic = round([560 400] .* 0.75); % px
     GUI.input_dims = [175 25]; % px, size of dropdowns, sliders, buttons, etc.
     GUI.input_x = 170; % px
     GUI.label_x = 20; % px
     GUI.col_bac = zeros(1,3) + 0.90; % background color for buttons, dropdowns, etc.
+    GUI.col_hi  = [180 255 180]./255; % highlight color
     GUI.fs = 10; % fontsize
     GUI.gap_small = 3; % px
     GUI.gap_large = 25; % px
+    
+    % Default sizes for all figures
+    GUI.fig_sizes = [
+                        360 770 % control panel
+                        GUI.fig_size_basic
+                        GUI.fig_size_basic
+                        GUI.fig_size_basic
+                        GUI.fig_size_basic
+                        GUI.fig_size_basic
+                        GUI.fig_size_basic .* [3 1] % photo stack
+                        GUI.fig_size_basic
+                        1000 420 % mesh & spectra
+                    ];
     
     %% Constants
     
@@ -38,12 +51,10 @@ function hyperspectral_image_GUI
         set(gcf,'Name','Control Panel','NumberTitle','off','MenuBar','none','ToolBar','none')
         clf
         set(gcf,'color','white')
-        pos = get(gcf,'position');
-        set(gcf,'position',[pos(1:2) GUI.panel_size])
         
     %% Main inputs
 
-    Select_Filters.pos = [GUI.input_x, GUI.panel_size(2)-35, GUI.input_dims];
+    Select_Filters.pos = [GUI.input_x, GUI.fig_sizes(1,2)-35, GUI.input_dims];
     Select_Filters.vals = {'K&F Concept Qty. 9','Filters2','Filters3'};
     uicontrol('Style','text', 'String','Filters: ', 'Position',[GUI.label_x, Select_Filters.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
     Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',1, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
@@ -117,15 +128,15 @@ function hyperspectral_image_GUI
     uicontrol('Style','text', 'String','Export Res, px: ', 'Position',[GUI.label_x, Export_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
     Export_Res.handle = uicontrol('Style','edit', 'String','1000', 'Position',Export_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
-    Wavelength_Resolution.pos = [GUI.input_x, Export_Res.pos(2)-GUI.gap_small, GUI.input_dims];
-    Wavelength_Resolution.vals = {'1','2','5','10','20','25','50','100'};
-    uicontrol('Style','text', 'String','Wavelength Res, nm: ', 'Position',[GUI.label_x, Wavelength_Resolution.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Wavelength_Resolution.handle = uicontrol('Style','popupmenu', 'String',Wavelength_Resolution.vals, 'Value',5, 'Position',Wavelength_Resolution.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    set(Wavelength_Resolution.handle,'Callback',@(hObject,eventdata) update_wavelength)
+    Wavelength_Res.pos = [GUI.input_x, Export_Res.pos(2)-GUI.gap_small, GUI.input_dims];
+    Wavelength_Res.vals = {'1','2','5','10','20','25','50','100'};
+    uicontrol('Style','text', 'String','Wavelength Res, nm: ', 'Position',[GUI.label_x, Wavelength_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Wavelength_Res.handle = uicontrol('Style','popupmenu', 'String',Wavelength_Res.vals, 'Value',5, 'Position',Wavelength_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(Wavelength_Res.handle,'Callback',@(hObject,eventdata) update_wavelength)
 
     %% Camera gains
     
-    Gain_R.pos = [GUI.input_x, Wavelength_Resolution.pos(2)-GUI.gap_large, GUI.input_dims];
+    Gain_R.pos = [GUI.input_x, Wavelength_Res.pos(2)-GUI.gap_large, GUI.input_dims];
     uicontrol('Style','text', 'String','Gain, Camera R: ', 'Position',[GUI.label_x, Gain_R.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
     Gain_R.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gain_R.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Gain_R.handle,'Callback',@(hObject,eventdata) update_camera)
@@ -160,33 +171,29 @@ function hyperspectral_image_GUI
     
     %% Outputs
     
-    Mesh_Quantity.pos = [GUI.input_x, Value_High.pos(2)-GUI.gap_large, GUI.input_dims];
-    uicontrol('Style','text', 'String','Mesh Quantity: ', 'Position',[GUI.label_x, Mesh_Quantity.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Mesh_Quantity.handle = uicontrol('Style','edit', 'String','10', 'Position',Mesh_Quantity.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    
-%     Export_GIF.pos = [GUI.input_x, Mesh_Quantity.pos(2)-GUI.gap_small, GUI.input_dims];
-%     uicontrol('Style','text', 'String','Export GIF: ', 'Position',[GUI.label_x, Export_GIF.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-%     Export_GIF.handle = uicontrol('Style','radiobutton', 'String','', 'Position',Export_GIF.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-%     
-%     GIF_Duration.pos = [GUI.input_x, Export_GIF.pos(2)-GUI.gap_small, GUI.input_dims];
-%     uicontrol('Style','text', 'String','GIF Duration, sec: ', 'Position',[GUI.label_x, GIF_Duration.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-%     GIF_Duration.handle = uicontrol('Style','edit', 'String','3', 'Position',GIF_Duration.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Mesh_Density.pos = [GUI.input_x, Value_High.pos(2)-GUI.gap_large, GUI.input_dims];
+    uicontrol('Style','text', 'String','Mesh Density, pt/side: ', 'Position',[GUI.label_x, Mesh_Density.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Mesh_Density.handle = uicontrol('Style','edit', 'String','10', 'Position',Mesh_Density.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     %% Execution/Control
     
-    Preview_Image.pos = [GUI.input_x, Mesh_Quantity.pos(2)-GUI.gap_large, GUI.input_dims];
-    Preview_Image.handle = uicontrol('Style','pushbutton', 'String','Preview Image', 'Position',Preview_Image.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Preview_Image.pos = [GUI.input_x, Mesh_Density.pos(2)-GUI.gap_large, GUI.input_dims];
+    Preview_Image.handle = uicontrol('Style','pushbutton', 'String','Preview Image', 'Position',Preview_Image.pos, 'BackgroundColor',GUI.col_hi, 'FontSize',GUI.fs);
     set(Preview_Image.handle,'Callback',@(hObject,eventdata) preview_image)
     
     Export_Image.pos = [GUI.input_x, Preview_Image.pos(2)-GUI.gap_small, GUI.input_dims];
-    Export_Image.handle = uicontrol('Style','pushbutton', 'String','Export Image', 'Position',Export_Image.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Export_Image.handle = uicontrol('Style','pushbutton', 'String','Export Image', 'Position',Export_Image.pos, 'BackgroundColor',GUI.col_hi, 'FontSize',GUI.fs);
     set(Export_Image.handle,'Callback',@(hObject,eventdata) export_image)
     
-    Cascade_All.pos = [GUI.input_x, Export_Image.pos(2)-GUI.gap_large, GUI.input_dims];
-    Cascade_All.handle = uicontrol('Style','pushbutton', 'String','Cascade All', 'Position',Cascade_All.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    set(Cascade_All.handle,'Callback',@(hObject,eventdata) cascade_all)
+    Reset_Controls.pos = [GUI.input_x, Export_Image.pos(2)-GUI.gap_large, GUI.input_dims];
+    Reset_Controls.handle = uicontrol('Style','pushbutton', 'String','Reset Controls', 'Position',Reset_Controls.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(Reset_Controls.handle,'Callback',@(hObject,eventdata) reset_controls)
     
-    Close_Figures.pos = [GUI.input_x, Cascade_All.pos(2)-GUI.gap_small, GUI.input_dims];
+    Reset_Figures.pos = [GUI.input_x, Reset_Controls.pos(2)-GUI.gap_small, GUI.input_dims];
+    Reset_Figures.handle = uicontrol('Style','pushbutton', 'String','Reset Figures', 'Position',Reset_Figures.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(Reset_Figures.handle,'Callback',@(hObject,eventdata) reset_figures)
+    
+    Close_Figures.pos = [GUI.input_x, Reset_Figures.pos(2)-GUI.gap_small, GUI.input_dims];
     Close_Figures.handle = uicontrol('Style','pushbutton', 'String','Close Figures', 'Position',Close_Figures.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Close_Figures.handle,'Callback',@(hObject,eventdata) close_figures)
     
@@ -197,7 +204,7 @@ function hyperspectral_image_GUI
     
     %% Declare globals
     
-    LAMBDA     = [];
+    Wavelength = [];
     Observer   = [];
     Illuminant = [];
     Photos     = [];
@@ -208,13 +215,13 @@ function hyperspectral_image_GUI
     %% Main body
     
     update_wavelength
-    cascade_all
+    reset_figures
     
     %% Supporting functions
     
     function update_wavelength
         
-        LAMBDA = min(lambda_lims) : str2double(Wavelength_Resolution.vals{get(Wavelength_Resolution.handle, 'value')}) : max(lambda_lims);
+        Wavelength = min(lambda_lims) : str2double(Wavelength_Res.vals{get(Wavelength_Res.handle, 'value')}) : max(lambda_lims);
         update_illuminant
         update_camera
         update_observer
@@ -223,6 +230,26 @@ function hyperspectral_image_GUI
     end
 
     %% Figure control
+    
+    function reset_controls
+        
+        set(Select_Filters.handle,          'value'   ,1)
+        set(Select_Illuminant.handle,       'value'   ,5)
+        set(Select_Camera.handle,           'value'   ,8)
+        set(Select_Observer.handle,         'value'   ,1)
+        set(Preview_Res.handle,             'string'  ,500)
+        set(Export_Res.handle,              'string'  ,1000)
+        set(Wavelength_Res.handle,          'value'   ,5)
+        set(Gain_R.handle,                  'string', '1.00')
+        set(Gain_G.handle,                  'string', '1.00')
+        set(Gain_B.handle,                  'string', '1.00')
+        set(Fraction_Saturated_Low.handle,  'string', '0.01')
+        set(Fraction_Saturated_High.handle, 'string', '0.01')
+        set(Value_Low.handle,               'string', '0.10')
+        set(Value_High.handle,              'string', '0.90')
+        set(Mesh_Density.handle,            'string', '10')
+        
+    end
     
     function close_figures
         fig_handles = findobj('Type', 'figure');
@@ -238,7 +265,7 @@ function hyperspectral_image_GUI
         close all
     end
 
-    function cascade_all
+    function reset_figures
         
         fig_handles = findobj('Type', 'figure');
         screen_res = get(0,'screensize');
@@ -247,21 +274,19 @@ function hyperspectral_image_GUI
         dp = [29, -29]; % px, cascade offset
         oc = [18 40]; % px, offset from corner
         
-        % Set first figure
+        % Position first figure
         figure(1)
-        pos1 = get(gcf,'position');
-        xy = [oc(1), screen_res(2)-oc(2)-pos1(4)];
-        set(gcf,'position',[xy pos1(3:4)]);
+        xy = [oc(1), screen_res(2)-oc(2)-GUI.fig_sizes(1,2)];
+        set(gcf,'position',[xy, GUI.fig_sizes(1,:)]);
         
-        figure(2)
-        pos = get(gcf,'position');
-        xy = [oc(1)*2.5 + pos1(3), screen_res(2)-oc(2)-pos(4)];
+        % Define special offset for second figure to prevent cascading on
+        % top of control panel
+        xy = [oc(1)*2.5 + GUI.fig_sizes(1,1), screen_res(2)-oc(2)-GUI.fig_sizes(2,2)];
         
         for f = 2 : length(fig_handles)
             
             figure(f)
-            pos = get(gcf,'position');
-            set(gcf,'position',[xy pos(3:4)]);
+            set(gcf,'position',[xy GUI.fig_sizes(f,:)]);
             xy = xy + dp;
             
         end
@@ -310,7 +335,7 @@ function hyperspectral_image_GUI
         msg = 'Generating datacube...';
         h = waitbar(0,msg);
 
-        qty_lam = length(LAMBDA);
+        qty_lam = length(Wavelength);
         DC = zeros(Photos.res(1), Photos.res(2), qty_lam); % initialize datacube
         UNI = zeros(size(DC)); % response of camera & filters to ideal uniform light source
         IL = reshape(Illuminant.power, [1, 1, qty_lam]);
@@ -411,8 +436,6 @@ function hyperspectral_image_GUI
         
         figure(8)
             set(gcf,'Name','Image','NumberTitle','off','MenuBar','none','ToolBar','none')
-            pos = get(gcf,'position');
-            set(gcf,'position',[pos(1:2) GUI.fig_size])
             clf
             set(gcf,'color','white')
             image(Image.RGB)
@@ -421,9 +444,9 @@ function hyperspectral_image_GUI
             title('Hyperspectral Image')
             
         % Show mesh and spectra
-        fig_size = [1000 420]; % px
+%         fig_size = ; % px
 
-        mesh_qty = str2double(get(Mesh_Quantity.handle, 'string'));
+        mesh_qty = str2double(get(Mesh_Density.handle, 'string'));
         dp = round(max(size(Image.RGB)) / mesh_qty); % px
         x = round(dp/2 : dp : size(Image.RGB,2));
         y = round(dp/2 : dp : size(Image.RGB,1));
@@ -441,10 +464,7 @@ function hyperspectral_image_GUI
             set(gcf,'Name','Image, Mesh, Spectra, and Colors','NumberTitle','off','MenuBar','none','ToolBar','none')
             clf
             set(gcf,'color','white')
-            pos = get(gcf,'position');
-            set(gcf,'position', [pos(1:2) fig_size])
             subplot(1,2,1)
-            pos = get(gca,'position');
             set(gca,'position',[0.03 0.02 0.45 1.00])
             hold on
             image(flipud(Image.RGB))
@@ -538,9 +558,7 @@ function hyperspectral_image_GUI
         
         figure(7)
             set(gcf,'Name','Photo Stack','NumberTitle','off','MenuBar','none','ToolBar','none')
-            pos = get(gcf,'position');
-            set(gcf,'position',[pos(1:2) GUI.fig_size])
-            scale = 0.9;
+            scale = 0.95;
             x = ((1:Photos.res_orig(2)) ./ Photos.res_orig(2) - 1/2) .* scale;
             y = ((1:Photos.res_orig(1)) ./ Photos.res_orig(1) ./ Photos.AR) .* scale;
             clf
@@ -554,7 +572,7 @@ function hyperspectral_image_GUI
             set(gca,'YTick',[])
             axis tight
             axis equal
-            set(gca,'position',[0.05 0.05 0.90 0.90])
+            set(gca,'position',[0.025 0.025 0.95 0.95])
             title(['Photo Stack for ' regexprep(Photos.filename_first,'\_','\\_') ' and ' Filters.description])
         
     end
@@ -609,11 +627,11 @@ function hyperspectral_image_GUI
         end
         
         Filters.qty = size(trans,2);
-        Filters.T = zeros(length(LAMBDA), Filters.qty);
+        Filters.T = zeros(length(Wavelength), Filters.qty);
         Filters.XYZ = nan(Filters.qty, 3);
         Filters.RGB = nan(Filters.qty, 3);
         for f = 1 : size(trans,2)
-            Filters.T(:,f) = interp1(Filters.lambda, trans(:,f), LAMBDA);
+            Filters.T(:,f) = interp1(Filters.lambda, trans(:,f), Wavelength);
             
             for cc = 1 : 3
                 Filters.XYZ(f,cc) = sum(Observer.sensitivity(:,cc) .* Filters.T(:,f));
@@ -626,12 +644,10 @@ function hyperspectral_image_GUI
         end
         Filters.RGB(Filters.RGB<0) = 0;
         Filters.RGB(Filters.RGB>1) = 1;
-        Filters.lambda = LAMBDA;
+        Filters.lambda = Wavelength;
         
         figure(6)
             set(gcf,'Name','Filter Transmissions','NumberTitle','off','MenuBar','none','ToolBar','none')
-            pos = get(gcf,'position');
-            set(gcf,'position',[pos(1:2) GUI.fig_size])
             clf
             hold on
             set(gcf,'color','white')
@@ -646,8 +662,6 @@ function hyperspectral_image_GUI
             
         figure(5)
             set(gcf,'Name','Filter Colors','NumberTitle','off','MenuBar','none','ToolBar','none')
-            pos = get(gcf,'position');
-            set(gcf,'position',[pos(1:2) GUI.fig_size])
             clf
             hold on
             set(gcf,'color','white')
@@ -662,9 +676,8 @@ function hyperspectral_image_GUI
             axis equal
             axis tight
             set(gca,'YTick',[])
-            set(gca,'position',[0.05 0.05 0.90 0.90])
+            set(gca,'position',[0.025 0.025 0.95 0.95])
             title(['Filters: ' Filters.description])
-    
         
     end
 
@@ -697,16 +710,14 @@ function hyperspectral_image_GUI
         end
         
         ob_sen = ob_sen';
-        Observer.sensitivity = zeros(length(LAMBDA), 3);
+        Observer.sensitivity = zeros(length(Wavelength), 3);
         for cc = 1 : 3
-            Observer.sensitivity(:,cc) = interp1(Observer.lambda, ob_sen(:,cc), LAMBDA);
+            Observer.sensitivity(:,cc) = interp1(Observer.lambda, ob_sen(:,cc), Wavelength);
         end
-        Observer.lambda = LAMBDA;
+        Observer.lambda = Wavelength;
         
         figure(2)
             set(gcf,'Name','Observer','NumberTitle','off','MenuBar','none','ToolBar','none')
-            pos = get(gcf,'position');
-            set(gcf,'position',[pos(1:2) GUI.fig_size])
             clf
             hold on
             set(gcf,'color','white')
@@ -912,11 +923,11 @@ function hyperspectral_image_GUI
         
         % Standardize domain
         cam_sen = cam_sen';
-        Camera.RGB_observer = zeros(length(LAMBDA), 3);
+        Camera.RGB_observer = zeros(length(Wavelength), 3);
         for cc = 1 : 3
-            Camera.RGB_observer(:,cc) = interp1(Camera.lambda, cam_sen(:,cc), LAMBDA);
+            Camera.RGB_observer(:,cc) = interp1(Camera.lambda, cam_sen(:,cc), Wavelength);
         end
-        Camera.lambda = LAMBDA;
+        Camera.lambda = Wavelength;
         
         % Query and apply hains
         Camera.RGB_gains = [
@@ -924,12 +935,10 @@ function hyperspectral_image_GUI
                             str2double(get(Gain_G.handle, 'string'))
                             str2double(get(Gain_B.handle, 'string'))
                        ]';
-        Camera.RGB_observer = Camera.RGB_observer .* repmat(Camera.RGB_gains, [length(LAMBDA), 1]);
+        Camera.RGB_observer = Camera.RGB_observer .* repmat(Camera.RGB_gains, [length(Wavelength), 1]);
         
         figure(4)
             set(gcf,'Name','Camera','NumberTitle','off','MenuBar','none','ToolBar','none')
-            pos = get(gcf,'position');
-            set(gcf,'position',[pos(1:2) GUI.fig_size])
             clf
             hold on
             set(gcf,'color','white')
@@ -989,13 +998,11 @@ function hyperspectral_image_GUI
         end
         
         % Resample to match standard domain
-        Illuminant.power = interp1(Illuminant.lambda, Illuminant.power, LAMBDA)';
-        Illuminant.lambda = LAMBDA;
+        Illuminant.power = interp1(Illuminant.lambda, Illuminant.power, Wavelength)';
+        Illuminant.lambda = Wavelength;
         
         figure(3)
             set(gcf,'Name','Illuminant','NumberTitle','off','MenuBar','none','ToolBar','none')
-            pos = get(gcf,'position');
-            set(gcf,'position',[pos(1:2) GUI.fig_size])
             clf
             set(gcf,'color','white')
             plot(Illuminant.lambda, Illuminant.power, 'k')

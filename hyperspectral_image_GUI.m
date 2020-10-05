@@ -55,9 +55,9 @@ function hyperspectral_image_GUI
     %% Main inputs
 
     Select_Filters.pos = [GUI.input_x, GUI.fig_sizes(1,2)-35, GUI.input_dims];
-    Select_Filters.vals = {'K&F Concept Qty. 9','Filters2','Filters3'};
+    Select_Filters.vals = {'K&F Concept Qty. 9','Roscolux 20120-10-04 Qty. 13'};
     uicontrol('Style','text', 'String','Filters: ', 'Position',[GUI.label_x, Select_Filters.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',1, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',2, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Filters.handle,'Callback',@(hObject,eventdata) update_filters)
     
     Select_Illuminant.pos = [GUI.input_x, Select_Filters.pos(2)-GUI.gap_small, GUI.input_dims];
@@ -126,7 +126,7 @@ function hyperspectral_image_GUI
     
     Export_Res.pos = [GUI.input_x, Preview_Res.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Export Res, px: ', 'Position',[GUI.label_x, Export_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Export_Res.handle = uicontrol('Style','edit', 'String','1000', 'Position',Export_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Export_Res.handle = uicontrol('Style','edit', 'String','2000', 'Position',Export_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Wavelength_Res.pos = [GUI.input_x, Export_Res.pos(2)-GUI.gap_small, GUI.input_dims];
     Wavelength_Res.vals = {'1','2','5','10','20','25','50','100'};
@@ -233,12 +233,12 @@ function hyperspectral_image_GUI
     
     function reset_controls
         
-        set(Select_Filters.handle,          'value'   ,1)
+        set(Select_Filters.handle,          'value'   ,2)
         set(Select_Illuminant.handle,       'value'   ,5)
         set(Select_Camera.handle,           'value'   ,8)
         set(Select_Observer.handle,         'value'   ,1)
         set(Preview_Res.handle,             'string'  ,500)
-        set(Export_Res.handle,              'string'  ,1000)
+        set(Export_Res.handle,              'string'  ,2000)
         set(Wavelength_Res.handle,          'value'   ,5)
         set(Gain_R.handle,                  'string', '1.00')
         set(Gain_G.handle,                  'string', '1.00')
@@ -569,6 +569,7 @@ function hyperspectral_image_GUI
                 im = imresize(Photos.RGB_orig{p}, preview_res/max(Photos.res_orig));
                 image(p + x, y, flipud(im))
             end
+            set(gca,'XTick',1:Filters.qty)
             set(gca,'YTick',[])
             axis tight
             axis equal
@@ -621,6 +622,30 @@ function hyperspectral_image_GUI
                                 0.62726 0.97729 0.45564 0.96831 0.66522 0.84224 0.96527 0.98127 0.55205
                                 0.65049 0.98120 0.46861 0.97302 0.73649 0.91719 0.97997 0.99693 0.59505
                             ];
+            case 2 % 'Roscolux 20120-10-04 Qty. 13'
+                Filters.lambda = 360 : 20 : 740;
+                trans = [
+                            0.2900	0.1656	0.0360	0.0570	0.0032	0.0304	0.1786	0.0420	0.1872	0.1464	0.0016	0.0070	0.1166
+                            0.4500	0.2356	0.0750	0.0825	0.0140	0.1120	0.1408	0.0145	0.2162	0.2244	0.0289	0.0125	0.1155
+                            0.4600	0.3160	0.1665	0.1215	0.0201	0.1206	0.0360	0.0024	0.1073	0.2272	0.1225	0.0098	0.0792
+                            0.3500	0.4346	0.2760	0.1680	0.0000	0.0760	0.0050	0.0004	0.0252	0.1825	0.0900	0.0088	0.0468
+                            0.2500	0.4452	0.4440	0.2812	0.0000	0.0656	0.0008	0.0005	0.0078	0.0888	0.0225	0.0145	0.0378
+                            0.2100	0.3444	0.4898	0.4424	0.0255	0.0680	0.0024	0.0072	0.0234	0.0380	0.0025	0.0180	0.0567
+                            0.1900	0.2241	0.3927	0.5005	0.3825	0.1360	0.0144	0.0858	0.1221	0.0158	0.0001	0.0154	0.1180
+                            0.1000	0.1458	0.2345	0.4221	0.6468	0.3192	0.0608	0.2035	0.1036	0.0079	0.0000	0.0111	0.1160
+                            0.0500	0.0858	0.1060	0.2756	0.5760	0.4800	0.1680	0.3245	0.0651	0.0079	0.0000	0.0055	0.1152
+                            0.0400	0.0740	0.0306	0.1224	0.3905	0.4544	0.3968	0.4189	0.0840	0.0078	0.0000	0.0071	0.1089
+                            0.0500	0.0432	0.0100	0.0460	0.1792	0.3192	0.4674	0.4264	0.0792	0.0228	0.0001	0.0000	0.0990
+                            0.0600	0.0469	0.0016	0.0104	0.0792	0.1936	0.3740	0.3654	0.2223	0.1207	0.0009	0.0087	0.0804
+                            0.1600	0.0340	0.0012	0.0048	0.0418	0.1254	0.2805	0.2640	0.3724	0.4080	0.0529	0.0264	0.0672
+                            0.1700	0.0201	0.0008	0.0028	0.0259	0.0814	0.1892	0.1584	0.3234	0.5292	0.3844	0.0968	0.0704
+                            0.1100	0.0134	0.0008	0.0024	0.0273	0.0585	0.1290	0.1056	0.2584	0.4664	0.6400	0.2816	0.0534
+                            0.0900	0.0156	0.0176	0.0088	0.0301	0.0559	0.1118	0.0704	0.2250	0.4361	0.7225	0.5192	0.1780
+                            0.0700	0.0340	0.0795	0.0315	0.0185	0.0407	0.0946	0.0623	0.1924	0.4183	0.7396	0.6764	0.5251
+                            0.0900	0.1305	0.1824	0.1128	0.0364	0.0624	0.1032	0.0792	0.2280	0.4539	0.7396	0.7304	0.6942
+                            0.2600	0.3696	0.2352	0.2016	0.0354	0.1416	0.2064	0.2200	0.3840	0.5696	0.7396	0.7480	0.7298
+                            0.5500	0.5896	0.4263	0.4067	0.0924	0.3168	0.4128	0.4717	0.5796	0.6764	0.7396	0.7654	0.7476
+                        ];
                 
             otherwise
                 error('No other filters supported yet')
@@ -675,6 +700,7 @@ function hyperspectral_image_GUI
             end
             axis equal
             axis tight
+            set(gca,'XTick',1:Filters.qty)
             set(gca,'YTick',[])
             set(gca,'position',[0.025 0.025 0.95 0.95])
             title(['Filters: ' Filters.description])

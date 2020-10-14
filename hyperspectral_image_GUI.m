@@ -17,33 +17,37 @@ function hyperspectral_image_GUI
     GUI.col_bac = zeros(1,3) + 0.90; % background color for buttons, dropdowns, etc.
     GUI.col_hi  = [180 255 180]./255; % highlight color
     GUI.fs = 10; % fontsize
-    GUI.gap_small = 3; % px
-    GUI.gap_large = 25; % px
+    GUI.gap_small = 1; % px
+    GUI.gap_large = 15; % px
     
     % Default sizes for all figures
     GUI.fig_sizes = [
-                        360 770 % control panel
-                        GUI.fig_size_basic
-                        GUI.fig_size_basic
-                        GUI.fig_size_basic
-                        GUI.fig_size_basic
-                        GUI.fig_size_basic
-                        GUI.fig_size_basic .* [3 1] % photo stack
-                        GUI.fig_size_basic
-                        1000 420 % mesh & spectra
+                        360 835                     % 1:  control panel
+                        GUI.fig_size_basic          % 2:  observer
+                        GUI.fig_size_basic          % 3:  illuminant
+                        GUI.fig_size_basic          % 4:  camera
+                        GUI.fig_size_basic          % 5:  filter colors
+                        GUI.fig_size_basic          % 6:  filter transmissions
+                        GUI.fig_size_basic          % 7:  sensor sensitivity
+                        GUI.fig_size_basic          % 8:  sensor PCA
+                        GUI.fig_size_basic          % 9:  sensor calibration
+                        GUI.fig_size_basic .* [3 1] % 10: photo stack
+                        GUI.fig_size_basic          % 11: image
+                        1000 420                    % 12: mesh & spectra
                     ];
     
     %% Constants
     
     % Computation
     lambda_lims = [400, 700]; % nm, wavelength limits
-    XYZ_lims = [0, 1.0888]; % absolute limits of the color space
     
     % GUI
     GUI.label_off_vert = 4; % px, label offset, vertical
     GUI.label_dims = [GUI.input_x-GUI.label_x, GUI.input_dims(2)];
     GUI.gap_small = GUI.gap_small + GUI.input_dims(2);
     GUI.gap_large = GUI.gap_large + GUI.input_dims(2);
+    
+    pca_explain_thresh = 0.99;
     
     %%
     
@@ -55,19 +59,27 @@ function hyperspectral_image_GUI
     %% Main inputs
 
     Select_Filters.pos = [GUI.input_x, GUI.fig_sizes(1,2)-35, GUI.input_dims];
-    Select_Filters.vals = {'K&F Concept Qty. 9','Roscolux 20120-10-04 Qty. 13'};
+    Select_Filters.vals = {
+                            'K&F Concept Qty. 9'
+                            'Roscolux 20120-10-04 Qty. 13'
+                            'Ideal Spikes 400-700 nm Qty. 13'
+                            'MidOpt FS100: BP470, BP525, BP590, BP635, BP660'
+                            'MidOpt Bi450, Bi518, Bi615, Bi685'
+                            'No Filter(s)'
+                          };
     uicontrol('Style','text', 'String','Filters: ', 'Position',[GUI.label_x, Select_Filters.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',2, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',4, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Filters.handle,'Callback',@(hObject,eventdata) update_filters)
     
     Select_Illuminant.pos = [GUI.input_x, Select_Filters.pos(2)-GUI.gap_small, GUI.input_dims];
     Select_Illuminant.vals = {
-                                'A, indoor incandescent'
-                                'C, average daylight'
-                                'D50, horizon light'
-                                'D55, mid-morning/afternoon'
-                                'D65, noon daylight'
-                                'D75, north sky daylight'
+                                'A, Indoor Incandescent'
+                                'C, Average Daylight'
+                                'D50, Horizon Light'
+                                'D55, Mid-Morning/Afternoon'
+                                'D65, Noon Daylight'
+                                'D75, North Sky Daylight'
+                                'Equal Intensity'
                              };
     uicontrol('Style','text', 'String','Illuminant: ', 'Position',[GUI.label_x, Select_Illuminant.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
     Select_Illuminant.handle = uicontrol('Style','popupmenu', 'String',Select_Illuminant.vals, 'Value',5, 'Position',Select_Illuminant.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
@@ -114,7 +126,13 @@ function hyperspectral_image_GUI
     Select_Observer.handle = uicontrol('Style','popupmenu', 'String',Select_Observer.vals, 'Position',Select_Observer.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Observer.handle,'Callback',@(hObject,eventdata) update_observer)
     
-    Load_Photos.pos = [GUI.input_x, Select_Observer.pos(2)-GUI.gap_small, GUI.input_dims];
+    Select_Calibration.pos = [GUI.input_x, Select_Observer.pos(2)-GUI.gap_small, GUI.input_dims];
+    Select_Calibration.vals = {'Schmid D65','Custom','None'};
+    uicontrol('Style','text', 'String','Calibration: ', 'Position',[GUI.label_x, Select_Calibration.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Select_Calibration.handle = uicontrol('Style','popupmenu', 'String',Select_Calibration.vals, 'Value',3, 'Position',Select_Calibration.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(Select_Calibration.handle,'Callback',@(hObject,eventdata) update_sensor)
+    
+    Load_Photos.pos = [GUI.input_x, Select_Calibration.pos(2)-GUI.gap_small, GUI.input_dims];
     Load_Photos.handle = uicontrol('Style','pushbutton', 'String','Load Photos', 'Position',Load_Photos.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Load_Photos.handle,'Callback',@(hObject,eventdata) load_photos)
 
@@ -151,9 +169,26 @@ function hyperspectral_image_GUI
     Gain_B.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gain_B.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Gain_B.handle,'Callback',@(hObject,eventdata) update_camera)
     
+    Minimum_Sensitivity.pos = [GUI.input_x, Gain_B.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','Minimum Sensitivity: ', 'Position',[GUI.label_x, Minimum_Sensitivity.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Minimum_Sensitivity.handle = uicontrol('Style','edit', 'String','0.01', 'Position',Minimum_Sensitivity.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(Minimum_Sensitivity.handle,'Callback',@(hObject,eventdata) update_sensor)
+    
+    Calibration_Wavelengths.pos = [GUI.input_x, Minimum_Sensitivity.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','Calibration Wavelengths: ', 'Position',[GUI.label_x, Calibration_Wavelengths.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Calibration_Wavelengths.handle = uicontrol('Style','edit', 'String','', 'Position',Calibration_Wavelengths.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    
+    Calibration_Gains.pos = [GUI.input_x, Calibration_Wavelengths.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','Calibration Gains: ', 'Position',[GUI.label_x, Calibration_Gains.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Calibration_Gains.handle = uicontrol('Style','edit', 'String','', 'Position',Calibration_Gains.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    
     %% Value scaling
     
-    Fraction_Saturated_Low.pos = [GUI.input_x, Gain_B.pos(2)-GUI.gap_large, GUI.input_dims];
+    Gamma.pos = [GUI.input_x, Calibration_Gains.pos(2)-GUI.gap_large, GUI.input_dims];
+    uicontrol('Style','text', 'String','Gamma: ', 'Position',[GUI.label_x, Gamma.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Gamma.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gamma.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    
+    Fraction_Saturated_Low.pos = [GUI.input_x, Gamma.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Fraction Saturated, Low: ', 'Position',[GUI.label_x, Fraction_Saturated_Low.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
     Fraction_Saturated_Low.handle = uicontrol('Style','edit', 'String','0.01', 'Position',Fraction_Saturated_Low.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
@@ -163,11 +198,11 @@ function hyperspectral_image_GUI
 
     Value_Low.pos = [GUI.input_x, Fraction_Saturated_High.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Value, Low: ', 'Position',[GUI.label_x, Value_Low.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Value_Low.handle = uicontrol('Style','edit', 'String','0.10', 'Position',Value_Low.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Value_Low.handle = uicontrol('Style','edit', 'String','0.05', 'Position',Value_Low.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Value_High.pos = [GUI.input_x, Value_Low.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Value, High: ', 'Position',[GUI.label_x, Value_High.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Value_High.handle = uicontrol('Style','edit', 'String','0.90', 'Position',Value_High.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Value_High.handle = uicontrol('Style','edit', 'String','0.95', 'Position',Value_High.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     %% Outputs
     
@@ -185,7 +220,11 @@ function hyperspectral_image_GUI
     Export_Image.handle = uicontrol('Style','pushbutton', 'String','Export Image', 'Position',Export_Image.pos, 'BackgroundColor',GUI.col_hi, 'FontSize',GUI.fs);
     set(Export_Image.handle,'Callback',@(hObject,eventdata) export_image)
     
-    Reset_Controls.pos = [GUI.input_x, Export_Image.pos(2)-GUI.gap_large, GUI.input_dims];
+    Generate_GIF.pos = [GUI.input_x, Export_Image.pos(2)-GUI.gap_small, GUI.input_dims];
+    Generate_GIF.handle = uicontrol('Style','pushbutton', 'String','Generate GIF', 'Position',Generate_GIF.pos, 'BackgroundColor',GUI.col_hi, 'FontSize',GUI.fs);
+    set(Generate_GIF.handle,'Callback',@(hObject,eventdata) generate_GIF)
+    
+    Reset_Controls.pos = [GUI.input_x, Generate_GIF.pos(2)-GUI.gap_large, GUI.input_dims];
     Reset_Controls.handle = uicontrol('Style','pushbutton', 'String','Reset Controls', 'Position',Reset_Controls.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Reset_Controls.handle,'Callback',@(hObject,eventdata) reset_controls)
     
@@ -201,7 +240,6 @@ function hyperspectral_image_GUI
     Exit_Program.handle = uicontrol('Style','pushbutton', 'String','Exit Program', 'Position',Exit_Program.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Exit_Program.handle,'Callback',@(hObject,eventdata) exit_program)
 
-    
     %% Declare globals
     
     Wavelength = [];
@@ -211,6 +249,8 @@ function hyperspectral_image_GUI
     Filters    = [];
     Image      = [];
     Camera     = [];
+    Sensor     = [];
+    SPD        = [];
     
     %% Main body
     
@@ -222,24 +262,157 @@ function hyperspectral_image_GUI
     function update_wavelength
         
         Wavelength = min(lambda_lims) : str2double(Wavelength_Res.vals{get(Wavelength_Res.handle, 'value')}) : max(lambda_lims);
-        update_illuminant
-        update_camera
         update_observer
         update_filters
+        update_camera
+        update_illuminant
+        update_sensor
+        
+        % For debug purposes - send high-level structures to workspace
+        assignin('base','Wavelength', Wavelength)
+        assignin('base','Observer',   Observer)
+        assignin('base','Illuminant', Illuminant)
+        assignin('base','Photos',     Photos)
+        assignin('base','Filters',    Filters)
+        assignin('base','Image',      Image)
+        assignin('base','Camera',     Camera)
+        assignin('base','Sensor',     Sensor)
+        assignin('base','SPD',        SPD)
         
     end
 
+    %%
+
+    function update_sensor
+        
+        % In this function, the overall system sensitivity is calculated,
+        % as a basis against which to normalize for SPD estimation.
+        
+%         figure(101)
+%             clf
+%             hold on
+%             set(gcf,'color','white')
+        
+        Sensor.sensitivity = zeros(length(Wavelength), 1);
+        for f = 1 : Filters.qty
+            T = Filters.T(:,f);
+            for cc = 1 : 3
+                S = Camera.RGB_observer(:,cc);
+                ST = S .* T;
+%                 plot(Wavelength, ST, 'k')
+                Sensor.sensitivity = Sensor.sensitivity + ST;
+            end
+        end
+        
+        sen_min = str2double(get(Minimum_Sensitivity.handle, 'string'));
+        Sensor.sen_min = sen_min * max(Sensor.sensitivity(:));
+        Sensor.ind_low_sen = find(Sensor.sensitivity<Sensor.sen_min); % indices of low sensitivity
+        Sensor.sensitivity(Sensor.sensitivity < Sensor.sen_min) = Sensor.sen_min;
+        
+%         grid on
+%         grid minor
+%         xlabel('Wavelength, nm')
+%         ylabel('Filter-Attenuated Sensitivity, ~')
+%         title(['ST Curves for ' Camera.description ' and ' Filters.description])
+        
+        S = repmat(Camera.RGB_observer', [Filters.qty, 1, 1]);
+        i = ceil((1 : Filters.qty*3)./3);
+        T = Filters.T(:,i)';
+        
+        ST = S .* T;
+    
+        [coeff,score,latent,tsquared,explained,mu] = pca(ST);
+        explained = explained ./ 100; % percent to fraction, 0-100 to 0-1
+        
+        % Prepare calibration
+        
+        i_cal = get(Select_Calibration.handle, 'value');
+        
+        switch i_cal
+            
+            case 1 % Schmid D65
+                cx = [400 700];
+                cy = [0.40 1.20];
+                
+            case 2 % Custom
+                calib_x = get(Calibration_Wavelengths.handle, 'string');
+                calib_y = get(Calibration_Gains.handle, 'string');
+                calib_x = regexp(calib_x, '([0-9.]+)', 'tokens');
+                calib_y = regexp(calib_y, '([0-9.]+)', 'tokens');
+                if length(calib_x) ~= length(calib_y) || length(calib_x) < 2
+                    warning('Invalid calibration parameters')
+                    return
+                end
+                cx = zeros(length(calib_x),1);
+                cy = zeros(length(calib_y),1);
+                for c = 1 : length(calib_x)
+                    cx(c) = str2double(calib_x{c}{1});
+                    cy(c) = str2double(calib_y{c}{1});
+                end
+                
+            case 3 % None
+                cx = [min(Wavelength) max(Wavelength)];
+                cy = [1 1];
+                
+        end
+
+        Sensor.calibration_gain       = interp1(cx, cy, Wavelength);
+        Sensor.calibration_wavelength = Wavelength;
+        
+        figure(7)
+            set(gcf,'Name','Sensor Sensitivity','NumberTitle','off','MenuBar','none','ToolBar','none')
+            clf
+            set(gcf,'color','white')
+            plot(Wavelength, Sensor.sensitivity, 'k')
+            axis([min(Wavelength) max(Wavelength) 0 max(ylim)])
+            grid on
+            grid minor
+            xlabel('Wavelength, nm')
+            ylabel('Spectral Sensitivity, ~')
+            title({'Overall Sensitivity of Camera/Filter Sensor',['\rm\fontsize{9}' Camera.description ', ' Filters.description]})
+            
+        figure(8)
+            set(gcf,'Name','Sensor PCA','NumberTitle','off','MenuBar','none','ToolBar','none')
+            clf
+            hold on
+            set(gcf,'color','white')
+            cse = cumsum(explained);
+            ind = min(find(cse > pca_explain_thresh));
+            plot([ind ind], [0 1], 'r')
+            plot(1:length(explained), cse, 'k-o')
+            text(ind, 0.5, [' ' num2str(ind) ' PC explain \geq ' num2str(round(pca_explain_thresh*100)) '% of variance'],'HorizontalAlignment','left','VerticalAlignment','middle')
+            axis([1 10 0 1])
+            grid on
+            grid minor
+            xlabel('Principal Component (PC) Index')
+            ylabel('Cumulative Sum, Variance Explained')
+            title('Sensor Principal Component Analysis (PCA)')
+            
+        figure(9)
+            set(gcf,'Name','Sensor Calibration Curve','NumberTitle','off','MenuBar','none','ToolBar','none')
+            clf
+            set(gcf,'color','white')
+            plot(Sensor.calibration_wavelength, Sensor.calibration_gain, 'k')
+            ylim([0 max(ylim)])
+            grid on
+            grid minor
+            xlabel('Wavelength, nm')
+            ylabel('SPD Calibration Gain, ~')
+            title('Sensor Calibration Curve')
+
+    end
+    
     %% Figure control
     
     function reset_controls
         
-        set(Select_Filters.handle,          'value'   ,2)
-        set(Select_Illuminant.handle,       'value'   ,5)
-        set(Select_Camera.handle,           'value'   ,8)
-        set(Select_Observer.handle,         'value'   ,1)
-        set(Preview_Res.handle,             'string'  ,500)
-        set(Export_Res.handle,              'string'  ,2000)
-        set(Wavelength_Res.handle,          'value'   ,5)
+        set(Select_Filters.handle,          'value',   2)
+        set(Select_Illuminant.handle,       'value',   5)
+        set(Select_Camera.handle,           'value',   8)
+        set(Select_Observer.handle,         'value',   1)
+        set(Preview_Res.handle,             'string',  500)
+        set(Export_Res.handle,              'string',  2000)
+        set(Wavelength_Res.handle,          'value',   5)
         set(Gain_R.handle,                  'string', '1.00')
         set(Gain_G.handle,                  'string', '1.00')
         set(Gain_B.handle,                  'string', '1.00')
@@ -294,6 +467,104 @@ function hyperspectral_image_GUI
     end
 
     %% Image preview & export
+    
+    function generate_GIF
+        
+        if ~isfield(Photos, 'RGB_orig')
+            warning('No photos loaded, cannot generate GIF')
+            return
+        end
+        if isempty(SPD)
+            warning('No image created, cannot generate GIF')
+            return
+        end
+        
+        lambda_vs_RGB = wavelength_vs_color(Wavelength); % get wavelength vs. color data
+        
+        % GIF parameters
+        fig_width = 500; % px
+        fs = 10; % font size
+        GIF_duration = 5; % sec
+        GIF_fps = length(Wavelength) / GIF_duration;
+        
+        timestamp = datestr(datetime('now'));
+        timestamp = regexprep(timestamp,':','-');
+        timestamp = regexprep(timestamp,' ','_');
+        
+        fn_GIF = regexprep(Photos.filename_first, '\..+',''); % strip off file extension
+        fn_GIF = [fn_GIF '_' timestamp '.GIF'];
+        
+        figure(100) % temporary figure
+            clf
+            set(gcf,'color','white')
+            pos = get(gcf,'position');
+            aspect_ratio = size(SPD,2) / size(SPD,1); % width/rect.height
+            set(gcf,'position',[pos(1:2), fig_width.*[aspect_ratio, 1]])
+            set(gca,'position',[0.05 0.05 0.89 0.90])
+
+        for f = 1 : size(SPD,3) % for each wavelength
+
+            % Show wavelength slice
+            cla
+            hold on
+            pcolor(flipud(SPD(:,:,f)))
+            shading flat
+            axis equal
+            axis tight
+            axis off
+            colormap gray
+            caxis([min(SPD(:)), max(SPD(:))])
+            h = colorbar;
+            set(get(h,'label'),'string','Spectral Power Distribution, Dimensionless');
+            set(h,'FontSize',fs)
+            title(['Wavelength: ' num2str(Wavelength(f)) ' ± ' num2str(abs(diff(Wavelength(1:2)))/2) ' nm'])
+
+            % Show wavelength color
+            rect.width = size(SPD,2) / length(Observer.lambda); % px/nm
+            rect.height = 25; % px
+            rect.y_gap = 10; % px
+            rect.x = [1 1 -1 -1] .* rect.width/2;
+            rect.y = [1 0 0 1] .* rect.height - rect.height - rect.y_gap;
+            
+            
+            target_lbl_qty = 10;
+            delta = 1;
+            while length(1:delta:length(Wavelength)) > target_lbl_qty
+                delta = delta + 1;
+            end
+            ind_show_lbl = 1 : delta : length(Wavelength);
+            
+            for w = 1 : size(lambda_vs_RGB, 1)
+                center = (Wavelength(w)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
+                center = center * (size(SPD,2)-rect.width) + rect.width/2;
+                fill(rect.x + center, rect.y, lambda_vs_RGB(w,:), 'EdgeColor','none')
+                if ismember(w, ind_show_lbl)
+                    text(center, min(rect.y), [num2str(Wavelength(w)) ' nm'], 'HorizontalAlignment','center','VerticalAlignment','top','FontSize',fs)
+                end
+            end
+
+            % Outline the current wavelength band
+            center = (Wavelength(f)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
+            center = center * (size(SPD,2)-rect.width) + rect.width/2;
+            plot([rect.x, rect.x(1)] + center, [rect.y, rect.y(1)], 'k', 'LineWidth', 2)
+
+            drawnow
+
+            % Capture the frame
+            frame = getframe(gcf); 
+            im = frame2im(frame); 
+            [imind,cm] = rgb2ind(im,256);
+            if f == 1
+                imwrite(imind,cm, [Photos.pathdir '\' fn_GIF],'gif', 'Loopcount',inf,'DelayTime',1/GIF_fps);
+            else 
+                imwrite(imind,cm, [Photos.pathdir '\' fn_GIF],'gif','WriteMode','append','DelayTime',1/GIF_fps); 
+            end
+
+        end
+        
+        close(figure(100))
+        
+    end
 
     function preview_image
         if ~isfield(Photos, 'RGB_orig')
@@ -336,8 +607,7 @@ function hyperspectral_image_GUI
         h = waitbar(0,msg);
 
         qty_lam = length(Wavelength);
-        DC = zeros(Photos.res(1), Photos.res(2), qty_lam); % initialize datacube
-        UNI = zeros(size(DC)); % response of camera & filters to ideal uniform light source
+        SPD = zeros(Photos.res(1), Photos.res(2), qty_lam); % initialize datacube
         IL = reshape(Illuminant.power, [1, 1, qty_lam]);
         IL = repmat(IL, [Photos.res, 1]);
 
@@ -353,12 +623,10 @@ function hyperspectral_image_GUI
                 ST = reshape(ST, [1, 1, qty_lam]);
                 ST = repmat(ST, [Photos.res, 1]);
 
-                UNI = UNI + ST;
-
                 VAL = Photos.RGB{f}(:,:,cc); % 0 to 1
                 VAL = repmat(VAL, [1,1, qty_lam]);
 
-                DC = DC + ST .* VAL;
+                SPD = SPD + ST .* VAL;
 
                 % Update waitbar
                 status_new = round(((f-1)*3+cc)/(Filters.qty*3)*100);
@@ -373,9 +641,31 @@ function hyperspectral_image_GUI
 
             end
         end
-
-        DC = DC ./ UNI; % normalize to uniform response
-        DC = DC .* IL; % normalize to light source
+        
+        SEN = reshape(Sensor.sensitivity, [1,1,qty_lam]);
+        SEN = repmat(SEN,[Photos.res,1]);
+        
+        SPD = SPD ./ SEN; % normalize to maximum response
+        SPD = SPD .* IL; % normalize to light source
+        
+        % Account for low-sensitivity wavelengths
+        for w = 1 : size(SPD,3)
+            if ~ismember(Sensor.ind_low_sen, w)
+                continue
+            end
+            % Find and set to closest valid wavelength
+            wave = 1 : size(SPD,3);
+            wave(Sensor.ind_low_sen) = [];
+            [~, ind_closest] = min(abs(wave-w));
+            SPD(:,:,w) = SPD(:,:,wave(ind_closest));
+        end
+        
+        % Normalize
+        SPD = SPD ./ max(SPD(:));
+        
+        calib = reshape(Sensor.calibration_gain, [1,1,length(Wavelength)]);
+        calib = repmat(calib, [Photos.res,1]);
+        SPD = SPD .* calib;
 
         close(h)
         
@@ -398,12 +688,11 @@ function hyperspectral_image_GUI
         C{3} = Z_C;
 
         for cc = 1 : 3
-            Image.XYZ(:,:,cc) = sum(DC .* C{cc}, 3);
+            Image.XYZ(:,:,cc) = sum(SPD .* C{cc}, 3);
         end
         
         % Normalize XYZ values
-        Image.XYZ = (Image.XYZ-min(Image.XYZ(:))) ./ (max(Image.XYZ(:))-min(Image.XYZ(:))); % 0 to 1
-        Image.XYZ = Image.XYZ * (max(XYZ_lims)-min(XYZ_lims)) + min(XYZ_lims); % XYZ lims
+        Image.XYZ = Image.XYZ ./ max(Image.XYZ(:)); % 0 to 1
         
         % Generate RGB image
         Image.RGB = xyz2rgb(Image.XYZ, 'WhitePoint', 'D65');
@@ -429,12 +718,13 @@ function hyperspectral_image_GUI
         val_lim_active = [bin.edges(min(bin.ind_active)), bin.edges(max(bin.ind_active))] + bin.width/2;
 
         % Normalize values
-        Image.RGB = imadjust(Image.RGB, val_lim_active, value_range);
+        gamma = str2double(get(Gamma.handle, 'string'));
+        Image.RGB = imadjust(Image.RGB, val_lim_active, value_range, gamma);
 
         Image.RGB(Image.RGB < 0) = 0;
         Image.RGB(Image.RGB > 1) = 1;
         
-        figure(8)
+        figure(11)
             set(gcf,'Name','Image','NumberTitle','off','MenuBar','none','ToolBar','none')
             clf
             set(gcf,'color','white')
@@ -444,8 +734,6 @@ function hyperspectral_image_GUI
             title('Hyperspectral Image')
             
         % Show mesh and spectra
-%         fig_size = ; % px
-
         mesh_qty = str2double(get(Mesh_Density.handle, 'string'));
         dp = round(max(size(Image.RGB)) / mesh_qty); % px
         x = round(dp/2 : dp : size(Image.RGB,2));
@@ -460,7 +748,7 @@ function hyperspectral_image_GUI
         X = X - round((margin_left-margin_right)/2);
         Y = Y - round((margin_bottom-margin_top)/2);
 
-        figure(9)
+        figure(12)
             set(gcf,'Name','Image, Mesh, Spectra, and Colors','NumberTitle','off','MenuBar','none','ToolBar','none')
             clf
             set(gcf,'color','white')
@@ -480,12 +768,12 @@ function hyperspectral_image_GUI
             set(gca,'position',[0.55 0.165 0.42 0.71])
             hold on
             for p = 1 : numel(X)
-                plot(Observer.lambda, squeeze(DC(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
+                plot(Observer.lambda, squeeze(SPD(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
             end
             grid on
             grid minor
             xlabel('Wavelength, nm')
-            ylabel('Light Power, ~')
+            ylabel('Spectral Power Distribution (SPD), ~')
             title('Sample Mesh Spectra and Colors')
             
         switch Image.mode
@@ -505,10 +793,21 @@ function hyperspectral_image_GUI
                         
                 imwrite(Image.RGB, [Photos.pathdir '\' fn_export '.' Photos.extension])
                 
-                figure(9)
-                set(gcf, 'PaperPositionMode', 'auto')
-                print(gcf,[Photos.pathdir '\' fn_export '_spectra'], '-dpng')
+                figure(12)
+                    set(gcf, 'PaperPositionMode', 'auto')
+                    print(gcf,[Photos.pathdir '\' fn_export '_spectra'], '-dpng')
         end
+        
+        % For debug purposes - send high-level structures to workspace
+        assignin('base','Wavelength', Wavelength)
+        assignin('base','Observer',   Observer)
+        assignin('base','Illuminant', Illuminant)
+        assignin('base','Photos',     Photos)
+        assignin('base','Filters',    Filters)
+        assignin('base','Image',      Image)
+        assignin('base','Camera',     Camera)
+        assignin('base','Sensor',     Sensor)
+        assignin('base','SPD',        SPD)
 
     end
 
@@ -556,7 +855,7 @@ function hyperspectral_image_GUI
         
         Photos.AR = Photos.res_orig(2) / Photos.res_orig(1); % aspect ratio
         
-        figure(7)
+        figure(10)
             set(gcf,'Name','Photo Stack','NumberTitle','off','MenuBar','none','ToolBar','none')
             scale = 0.95;
             x = ((1:Photos.res_orig(2)) ./ Photos.res_orig(2) - 1/2) .* scale;
@@ -623,29 +922,40 @@ function hyperspectral_image_GUI
                                 0.65049 0.98120 0.46861 0.97302 0.73649 0.91719 0.97997 0.99693 0.59505
                             ];
             case 2 % 'Roscolux 20120-10-04 Qty. 13'
+                % Source: find_stacked_orthogonal_filter_set_2.m
                 Filters.lambda = 360 : 20 : 740;
                 trans = [
-                            0.2900	0.1656	0.0360	0.0570	0.0032	0.0304	0.1786	0.0420	0.1872	0.1464	0.0016	0.0070	0.1166
-                            0.4500	0.2356	0.0750	0.0825	0.0140	0.1120	0.1408	0.0145	0.2162	0.2244	0.0289	0.0125	0.1155
-                            0.4600	0.3160	0.1665	0.1215	0.0201	0.1206	0.0360	0.0024	0.1073	0.2272	0.1225	0.0098	0.0792
-                            0.3500	0.4346	0.2760	0.1680	0.0000	0.0760	0.0050	0.0004	0.0252	0.1825	0.0900	0.0088	0.0468
-                            0.2500	0.4452	0.4440	0.2812	0.0000	0.0656	0.0008	0.0005	0.0078	0.0888	0.0225	0.0145	0.0378
-                            0.2100	0.3444	0.4898	0.4424	0.0255	0.0680	0.0024	0.0072	0.0234	0.0380	0.0025	0.0180	0.0567
-                            0.1900	0.2241	0.3927	0.5005	0.3825	0.1360	0.0144	0.0858	0.1221	0.0158	0.0001	0.0154	0.1180
-                            0.1000	0.1458	0.2345	0.4221	0.6468	0.3192	0.0608	0.2035	0.1036	0.0079	0.0000	0.0111	0.1160
-                            0.0500	0.0858	0.1060	0.2756	0.5760	0.4800	0.1680	0.3245	0.0651	0.0079	0.0000	0.0055	0.1152
-                            0.0400	0.0740	0.0306	0.1224	0.3905	0.4544	0.3968	0.4189	0.0840	0.0078	0.0000	0.0071	0.1089
-                            0.0500	0.0432	0.0100	0.0460	0.1792	0.3192	0.4674	0.4264	0.0792	0.0228	0.0001	0.0000	0.0990
-                            0.0600	0.0469	0.0016	0.0104	0.0792	0.1936	0.3740	0.3654	0.2223	0.1207	0.0009	0.0087	0.0804
-                            0.1600	0.0340	0.0012	0.0048	0.0418	0.1254	0.2805	0.2640	0.3724	0.4080	0.0529	0.0264	0.0672
-                            0.1700	0.0201	0.0008	0.0028	0.0259	0.0814	0.1892	0.1584	0.3234	0.5292	0.3844	0.0968	0.0704
-                            0.1100	0.0134	0.0008	0.0024	0.0273	0.0585	0.1290	0.1056	0.2584	0.4664	0.6400	0.2816	0.0534
-                            0.0900	0.0156	0.0176	0.0088	0.0301	0.0559	0.1118	0.0704	0.2250	0.4361	0.7225	0.5192	0.1780
-                            0.0700	0.0340	0.0795	0.0315	0.0185	0.0407	0.0946	0.0623	0.1924	0.4183	0.7396	0.6764	0.5251
-                            0.0900	0.1305	0.1824	0.1128	0.0364	0.0624	0.1032	0.0792	0.2280	0.4539	0.7396	0.7304	0.6942
-                            0.2600	0.3696	0.2352	0.2016	0.0354	0.1416	0.2064	0.2200	0.3840	0.5696	0.7396	0.7480	0.7298
-                            0.5500	0.5896	0.4263	0.4067	0.0924	0.3168	0.4128	0.4717	0.5796	0.6764	0.7396	0.7654	0.7476
-                        ];
+                            0.2900	0.4500	0.4600	0.3500	0.2500	0.2100	0.1900	0.1000	0.0500	0.0400	0.0500	0.0600	0.1600	0.1700	0.1100	0.0900	0.0700	0.0900	0.2600	0.5500
+                            0.1656	0.2356	0.3160	0.4346	0.4452	0.3444	0.2241	0.1458	0.0858	0.0740	0.0432	0.0469	0.0340	0.0201	0.0134	0.0156	0.0340	0.1305	0.3696	0.5896
+                            0.0360	0.0750	0.1665	0.2760	0.4440	0.4898	0.3927	0.2345	0.1060	0.0306	0.0100	0.0016	0.0012	0.0008	0.0008	0.0176	0.0795	0.1824	0.2352	0.4263
+                            0.0570	0.0825	0.1215	0.1680	0.2812	0.4424	0.5005	0.4221	0.2756	0.1224	0.0460	0.0104	0.0048	0.0028	0.0024	0.0088	0.0315	0.1128	0.2016	0.4067
+                            0.0032	0.0140	0.0201	0.0000	0.0000	0.0255	0.3825	0.6468	0.5760	0.3905	0.1792	0.0792	0.0418	0.0259	0.0273	0.0301	0.0185	0.0364	0.0354	0.0924
+                            0.0304	0.1120	0.1206	0.0760	0.0656	0.0680	0.1360	0.3192	0.4800	0.4544	0.3192	0.1936	0.1254	0.0814	0.0585	0.0559	0.0407	0.0624	0.1416	0.3168
+                            0.1786	0.1408	0.0360	0.0050	0.0008	0.0024	0.0144	0.0608	0.1680	0.3968	0.4674	0.3740	0.2805	0.1892	0.1290	0.1118	0.0946	0.1032	0.2064	0.4128
+                            0.0420	0.0145	0.0024	0.0004	0.0005	0.0072	0.0858	0.2035	0.3245	0.4189	0.4264	0.3654	0.2640	0.1584	0.1056	0.0704	0.0623	0.0792	0.2200	0.4717
+                            0.1872	0.2162	0.1073	0.0252	0.0078	0.0234	0.1221	0.1036	0.0651	0.0840	0.0792	0.2223	0.3724	0.3234	0.2584	0.2250	0.1924	0.2280	0.3840	0.5796
+                            0.1464	0.2244	0.2272	0.1825	0.0888	0.0380	0.0158	0.0079	0.0079	0.0078	0.0228	0.1207	0.4080	0.5292	0.4664	0.4361	0.4183	0.4539	0.5696	0.6764
+                            0.0016	0.0289	0.1225	0.0900	0.0225	0.0025	0.0001	0.0000	0.0000	0.0000	0.0001	0.0009	0.0529	0.3844	0.6400	0.7225	0.7396	0.7396	0.7396	0.7396
+                            0.0070	0.0125	0.0098	0.0088	0.0145	0.0180	0.0154	0.0111	0.0055	0.0071	0.0000	0.0087	0.0264	0.0968	0.2816	0.5192	0.6764	0.7304	0.7480	0.7654
+                            0.1166	0.1155	0.0792	0.0468	0.0378	0.0567	0.1180	0.1160	0.1152	0.1089	0.0990	0.0804	0.0672	0.0704	0.0534	0.1780	0.5251	0.6942	0.7298	0.7476
+                        ]';
+                    
+            case 3 % Ideal Spikes 400-700 nm Qty. 13
+                Filters.lambda = 400 : 25 : 700;
+                trans = eye(length(Filters.lambda));
+                
+            case 4 % 'MidOpt FS100: BP470, BP525, BP590, BP635, BP660'
+                % Source: https://midopt.com/filter-kits/fs100/
+                Filters.lambda = [350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990,1000,1010,1020,1030,1040,1050,1060,1070,1080,1090,1100];
+                trans = [0.0100000000000000,0.0100000000000000,0,0,0,0,4.03000000000000,71.6600000000000,93.5300000000000,92.8100000000000,93.7800000000000,95.9600000000000,96.8700000000000,96.9100000000000,95,45.7300000000000,3.40000000000000,0.490000000000000,0.250000000000000,0.440000000000000,0.360000000000000,0.200000000000000,0.230000000000000,0.320000000000000,0.280000000000000,0.320000000000000,0.300000000000000,0.310000000000000,0.280000000000000,0.0900000000000000,0.0400000000000000,0.0200000000000000,0.0300000000000000,0.0500000000000000,0.230000000000000,0.290000000000000,0.0900000000000000,0.0500000000000000,0.0300000000000000,0.0300000000000000,0.0600000000000000,0.0300000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0200000000000000,0.0700000000000000,0.140000000000000,0.270000000000000,0.170000000000000,0.150000000000000,0.150000000000000,0.150000000000000,0.330000000000000,0.560000000000000,0.330000000000000,0.180000000000000,0.150000000000000,0.190000000000000,0.280000000000000,0.490000000000000,0.530000000000000,0.330000000000000,0.200000000000000,0.140000000000000,0.130000000000000,0.140000000000000,0.170000000000000,0.220000000000000,0.280000000000000,0.380000000000000,0.460000000000000;0,0.0100000000000000,0,0,0.0100000000000000,0,0,0.0100000000000000,0.0100000000000000,0,0.0100000000000000,0.0100000000000000,0.310000000000000,16.9900000000000,65.4400000000000,85.7800000000000,91.7800000000000,91.2300000000000,93.9400000000000,90.4400000000000,88.5600000000000,52.5200000000000,23.5200000000000,10.6000000000000,2.16000000000000,1.65000000000000,1.33000000000000,0.380000000000000,0.230000000000000,0.410000000000000,0.440000000000000,0.170000000000000,0.150000000000000,0.270000000000000,0.410000000000000,0.240000000000000,0.180000000000000,0.290000000000000,0.890000000000000,1.30000000000000,0.510000000000000,0.270000000000000,0.260000000000000,0.480000000000000,1.13000000000000,0.330000000000000,0.0800000000000000,0.0300000000000000,0.0300000000000000,0.0200000000000000,0.0200000000000000,0.0400000000000000,0.0500000000000000,0.0800000000000000,0.110000000000000,0.150000000000000,0.220000000000000,0.300000000000000,0.420000000000000,0.590000000000000,0.830000000000000,1.16000000000000,1.70000000000000,3.07000000000000,5.29000000000000,8.12000000000000,11.0100000000000,17.4700000000000,35.1000000000000,57.9800000000000,62.7800000000000,47.4000000000000,32.5900000000000,27.9900000000000,31.5300000000000,40.2400000000000;0,0,0,0,0.0100000000000000,0,0,0,0,0,0,0,0,0,0,0.0100000000000000,0.0100000000000000,0.0200000000000000,0.140000000000000,6.49000000000000,46.4200000000000,82.4600000000000,92.6400000000000,95.1300000000000,95.0400000000000,73.4700000000000,30.6200000000000,11.2400000000000,4.93000000000000,2.30000000000000,1.20000000000000,0.780000000000000,0.610000000000000,0.430000000000000,0.290000000000000,0.250000000000000,0.280000000000000,0.390000000000000,0.380000000000000,0.250000000000000,0.190000000000000,0.230000000000000,0.460000000000000,0.870000000000000,0.510000000000000,0.220000000000000,0.150000000000000,0.160000000000000,0.270000000000000,0.880000000000000,1.54000000000000,0.420000000000000,0.210000000000000,0.130000000000000,0.180000000000000,0.310000000000000,0.510000000000000,0.740000000000000,0.920000000000000,0.970000000000000,0.940000000000000,0.840000000000000,0.670000000000000,0.570000000000000,0.580000000000000,0.690000000000000,0.960000000000000,1.53000000000000,2.91000000000000,6.11000000000000,12.3300000000000,20.9700000000000,28.6400000000000,33.2400000000000,37.4700000000000,43.8400000000000;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0100000000000000,0.0200000000000000,0.0400000000000000,0.0600000000000000,0.0600000000000000,0.0700000000000000,0.220000000000000,2.26000000000000,18.1200000000000,56.0400000000000,85.2300000000000,94.8500000000000,96.6200000000000,97.1500000000000,88.9900000000000,47.6600000000000,14.5000000000000,3.55000000000000,1.41000000000000,0.850000000000000,0.760000000000000,0.980000000000000,1.32000000000000,1.02000000000000,0.600000000000000,0.470000000000000,0.570000000000000,0.940000000000000,1.19000000000000,0.710000000000000,0.430000000000000,0.350000000000000,0.460000000000000,0.910000000000000,1.44000000000000,0.780000000000000,0.410000000000000,0.280000000000000,0.200000000000000,0.180000000000000,0.310000000000000,0.680000000000000,2.01000000000000,1.74000000000000,0.610000000000000,0.280000000000000,0.220000000000000,0.190000000000000,0.190000000000000,0.210000000000000,0.310000000000000,0.470000000000000,0.860000000000000,1.47000000000000,1.88000000000000,1.69000000000000,1.36000000000000,1.16000000000000,1.10000000000000,1.18000000000000;0,0,0,0,0.0100000000000000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0100000000000000,0.0100000000000000,0.0300000000000000,0.0700000000000000,0.140000000000000,0.310000000000000,1.54000000000000,13.5500000000000,49.7700000000000,80.1400000000000,91.9300000000000,96.5300000000000,96.7400000000000,88.6200000000000,66.9900000000000,47.3000000000000,18.5400000000000,6.47000000000000,4.22000000000000,3.61000000000000,1.95000000000000,0.930000000000000,0.690000000000000,0.760000000000000,0.890000000000000,0.650000000000000,0.400000000000000,0.340000000000000,0.400000000000000,0.670000000000000,0.990000000000000,0.650000000000000,0.500000000000000,0.620000000000000,0.0900000000000000,0.970000000000000,0.390000000000000,0.620000000000000,1.97000000000000,1.67000000000000,0.490000000000000,0.260000000000000,0.160000000000000,0.130000000000000,0.140000000000000,0.210000000000000,0.370000000000000,0.770000000000000,1.39000000000000,1.73000000000000,1.53000000000000,1.20000000000000,1.07000000000000,1.17000000000000,1.61000000000000,2.49000000000000]' ./ 100;
+                
+            case 5 % MidOpt Bi450, Bi518, Bi615, Bi685
+                Filters.lambda = [350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990,1000,1010,1020,1030,1040,1050,1060,1070,1080,1090,1100];
+                trans = [0,0,0.0100000000000000,0.0300000000000000,0.0600000000000000,0.0900000000000000,0.0600000000000000,0.160000000000000,0.670000000000000,49.7300000000000,88.4400000000000,88.5900000000000,45.1500000000000,1.11000000000000,0.150000000000000,0.0300000000000000,0.0600000000000000,0.120000000000000,0.160000000000000,0.0700000000000000,0.0900000000000000,0.0500000000000000,0.0400000000000000,0.0500000000000000,0.0800000000000000,0.160000000000000,0.0300000000000000,0.0300000000000000,0.0500000000000000,0.0800000000000000,0.220000000000000,0.240000000000000,0.250000000000000,0.0800000000000000,0.0400000000000000,0.0200000000000000,0.110000000000000,0.100000000000000,0.100000000000000,0.0400000000000000,0.0400000000000000,0.160000000000000,0.120000000000000,0.160000000000000,0.340000000000000,0.230000000000000,0.100000000000000,0.200000000000000,0.190000000000000,0.0600000000000000,0.130000000000000,0.190000000000000,0.170000000000000,0.130000000000000,0.0800000000000000,0.0100000000000000,0.0100000000000000,0.0400000000000000,0.130000000000000,0.120000000000000,0.0500000000000000,0.0800000000000000,0.150000000000000,0.120000000000000,0.0900000000000000,0.100000000000000,0.180000000000000,0.180000000000000,0.150000000000000,0.160000000000000,0.270000000000000,0.520000000000000,0.630000000000000,0.550000000000000,0.590000000000000,0.930000000000000;0.0100000000000000,0,0,0.0100000000000000,0,0,0,0,0.0100000000000000,0.0100000000000000,0,0,0.0100000000000000,0.0100000000000000,0.0100000000000000,7.02000000000000,74.0100000000000,89.8200000000000,25.8500000000000,0.0900000000000000,0.0100000000000000,0,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0200000000000000,0,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0,0,0.0100000000000000,0,0.0100000000000000,0.0100000000000000,0,0,0.0100000000000000,0,0.0100000000000000,0,0,0,0,0,0,0,0,0,0.0100000000000000,0.0700000000000000,0.150000000000000,0.400000000000000,2.08000000000000,1.41000000000000,0.200000000000000,0.190000000000000,0.170000000000000,0.170000000000000,0.250000000000000,0.590000000000000,0.710000000000000,0.310000000000000,0.120000000000000,0.0800000000000000,0.0700000000000000,0.100000000000000,0.0900000000000000,0.150000000000000,0.290000000000000,0.560000000000000,0.980000000000000,1.18000000000000;0,0,0,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0400000000000000,0.0200000000000000,0.0200000000000000,0.0100000000000000,0.0100000000000000,0.120000000000000,0.0300000000000000,0.0400000000000000,0.0400000000000000,0.0300000000000000,0.0200000000000000,0.0500000000000000,0.190000000000000,0.0700000000000000,0.0700000000000000,0.0800000000000000,0.350000000000000,35.6700000000000,92.2700000000000,76.2700000000000,5.22000000000000,0.300000000000000,0.280000000000000,0.130000000000000,0.280000000000000,0.140000000000000,0.0800000000000000,0.0600000000000000,0.0300000000000000,0.0400000000000000,0.0400000000000000,0.0300000000000000,0.0600000000000000,0.0400000000000000,0.0200000000000000,0.0300000000000000,0.0700000000000000,0.0700000000000000,0.120000000000000,0.160000000000000,0.320000000000000,0.190000000000000,0.0600000000000000,0.0300000000000000,0.0300000000000000,0.190000000000000,0.0100000000000000,0.0900000000000000,0.0500000000000000,0.0400000000000000,0.0300000000000000,0.0400000000000000,0.0200000000000000,0.0200000000000000,0,0.0100000000000000,0.0200000000000000,0,0.0100000000000000,0.0100000000000000,0.0300000000000000,0.0200000000000000,0.0300000000000000,0.0800000000000000,0.450000000000000,0.490000000000000,0.320000000000000,0.550000000000000;0,0,0,0,0,0.0100000000000000,0.0200000000000000,0,0,0,0.0600000000000000,0.0100000000000000,0.0300000000000000,0,0,0.0100000000000000,0.0100000000000000,0,0,0,0.0100000000000000,0.0200000000000000,0.0200000000000000,0.0100000000000000,0.0400000000000000,0.0800000000000000,0.0600000000000000,0.150000000000000,0.630000000000000,0.620000000000000,0.340000000000000,1.32000000000000,39.9900000000000,93.1800000000000,88.4900000000000,14.9300000000000,0.510000000000000,0.130000000000000,0.130000000000000,0.280000000000000,0.220000000000000,0.0900000000000000,0.0900000000000000,0.110000000000000,0.0700000000000000,0.0500000000000000,0.0400000000000000,0.0400000000000000,0.0500000000000000,0.100000000000000,0.0800000000000000,0.0200000000000000,0.0300000000000000,0.0900000000000000,0.0800000000000000,0.0500000000000000,0.0700000000000000,0.0200000000000000,0.0600000000000000,0.140000000000000,0.0700000000000000,0.0700000000000000,0.0700000000000000,0.0900000000000000,0.110000000000000,0.230000000000000,0.190000000000000,0.100000000000000,0.100000000000000,0.100000000000000,0.120000000000000,0.130000000000000,0.210000000000000,0.410000000000000,0.900000000000000,1.55000000000000]';
+                
+            case 6 % No Filter(s)
+                Filters.lambda = [400, 700];
+                trans = [1; 1];
                 
             otherwise
                 error('No other filters supported yet')
@@ -955,13 +1265,17 @@ function hyperspectral_image_GUI
         end
         Camera.lambda = Wavelength;
         
-        % Query and apply hains
+        % Query and apply gains
         Camera.RGB_gains = [
                             str2double(get(Gain_R.handle, 'string'))
                             str2double(get(Gain_G.handle, 'string'))
                             str2double(get(Gain_B.handle, 'string'))
                        ]';
         Camera.RGB_observer = Camera.RGB_observer .* repmat(Camera.RGB_gains, [length(Wavelength), 1]);
+        
+%         Camera.RGB_observer(Camera.RGB_observer<0.01) = 0.01;
+        
+        update_sensor
         
         figure(4)
             set(gcf,'Name','Camera','NumberTitle','off','MenuBar','none','ToolBar','none')
@@ -1020,6 +1334,10 @@ function hyperspectral_image_GUI
             case 6 % D75
                 Illuminant.lambda = [300 305 310 315 320 325 330 335 340 345 350 355 360 365 370 375 380 385 390 395 400 405 410 415 420 425 430 435 440 445 450 455 460 465 470 475 480 485 490 495 500 505 510 515 520 525 530 535 540 545 550 555 560 565 570 575 580 585 590 595 600 605 610 615 620 625 630 635 640 645 650 655 660 665 670 675 680 685 690 695 700 705 710 715 720 725 730 735 740 745 750 755 760 765 770 775 780];
                 Illuminant.power  = [0.043 2.588 5.133 17.47 29.808 42.369 54.93 56.095 57.259 60 62.74 62.861 62.982 66.647 70.312 68.507 66.703 68.333 69.963 85.946 101.929 106.911 111.894 112.346 112.798 107.945 103.092 112.145 121.198 127.104 133.01 132.682 132.355 129.838 127.322 127.061 126.8 122.291 117.783 117.186 116.589 115.146 113.702 111.181 108.659 109.552 110.445 108.367 106.289 105.596 104.904 102.452 100 97.808 95.616 94.914 94.213 90.605 86.997 87.112 87.227 86.684 86.14 84.861 83.581 81.164 78.747 78.587 78.428 76.614 74.801 74.562 74.324 74.873 75.422 73.499 71.576 67.714 63.852 64.464 65.076 66.573 68.07 62.256 56.443 60.343 64.242 66.697 69.151 63.89 58.629 50.623 42.617 51.985 61.352 59.838 58.324];
+            
+            case 7 % Equal Intensity
+                Illuminant.lambda = [0 1000];
+                Illuminant.power  = [1, 1];
                 
         end
         
@@ -1037,7 +1355,7 @@ function hyperspectral_image_GUI
             grid on
             grid minor
             xlabel('Wavelength, nm')
-            ylabel('Light Power, ~')
+            ylabel('Spectral Power Distribution (SPD), ~')
             title(['Illuminant: ' Illuminant.description])
         
     end

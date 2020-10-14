@@ -68,7 +68,6 @@
     % Camera settings
     Camera.ID = 'Canon 600D';
     Camera.RGB_sen_gains = [0.50, 1.00, 0.75];
-    Camera.min_sen = 0.00; % ~, minimum sensitivity
     Camera.lambda = 400 : 10 : 720;
     Camera.RGB_observer = [ % Canon 600D
                     0.0018383, 0.0034546, 0.0065563, 0.0064237, 0.003663, 0.0032176, 0.0045901, 0.0075219, 0.015409, 0.022585, 0.033511, 0.053847, 0.066262, 0.082616, 0.10166, 0.15313, 0.2023, 0.29541, 0.4398, 0.53074, 0.51692, 0.50521, 0.38884, 0.34276, 0.26434, 0.22089, 0.1637, 0.13044, 0.072591, 0.021389, 0.003813, 0.00089247, 0.00023267
@@ -191,9 +190,6 @@
     
     % Apply gains
     Camera.RGB_observer = Camera.RGB_observer .* repmat(Camera.RGB_sen_gains, [size(Camera.RGB_observer,1), 1]);
-    
-    % Apply minimum sensitivity
-    Camera.RGB_observer = Camera.RGB_observer .* (1-Camera.min_sen) + Camera.min_sen;
     
     % Resample and standardize domain(s)
     O = zeros(qty_lam, size(Camera.RGB_observer,2));

@@ -10,7 +10,7 @@ function hyperspectral_image_GUI
     
     %% GUI properties
     
-    GUI.fig_size_basic = round([560 400] .* 0.75); % px
+    GUI.fig_size_basic = round([560 400] .* 0.70); % px
     GUI.input_dims = [175 25]; % px, size of dropdowns, sliders, buttons, etc.
     GUI.input_x = 170; % px
     GUI.label_x = 20; % px
@@ -26,8 +26,8 @@ function hyperspectral_image_GUI
                         GUI.fig_size_basic          % 2:  observer
                         GUI.fig_size_basic          % 3:  illuminant
                         GUI.fig_size_basic          % 4:  camera
-                        GUI.fig_size_basic          % 5:  filter colors
-                        GUI.fig_size_basic          % 6:  filter transmissions
+                        [560 GUI.fig_size_basic(2)] % 5:  filter colors
+                        [560 GUI.fig_size_basic(2)] % 6:  filter transmissions
                         GUI.fig_size_basic          % 7:  sensor sensitivity
                         GUI.fig_size_basic          % 8:  sensor PCA
                         GUI.fig_size_basic          % 9:  sensor calibration
@@ -121,7 +121,7 @@ function hyperspectral_image_GUI
     set(Select_Camera.handle,'Callback',@(hObject,eventdata) update_camera)
     
     Select_Observer.pos = [GUI.input_x, Select_Camera.pos(2)-GUI.gap_small, GUI.input_dims];
-    Select_Observer.vals = {'CIE 1931 2°','CIE 1964 10°'};
+    Select_Observer.vals = {'CIE 1931 2° XYZ','CIE 1964 10° XYZ'};
     uicontrol('Style','text', 'String','Observer: ', 'Position',[GUI.label_x, Select_Observer.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
     Select_Observer.handle = uicontrol('Style','popupmenu', 'String',Select_Observer.vals, 'Position',Select_Observer.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Observer.handle,'Callback',@(hObject,eventdata) update_observer)
@@ -380,13 +380,14 @@ function hyperspectral_image_GUI
             ind = min(find(cse > pca_explain_thresh));
             plot([ind ind], [0 1], 'r')
             plot(1:length(explained), cse, 'k-o')
-            text(ind, 0.5, [' ' num2str(ind) ' PC explain \geq ' num2str(round(pca_explain_thresh*100)) '% of variance'],'HorizontalAlignment','left','VerticalAlignment','middle')
+            text(ind, 0.5, {[' ' num2str(ind) ' PC explain'], [' \geq ' num2str(round(pca_explain_thresh*100)) '% of variance']},'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',9)
             axis([1 10 0 1])
+            set(gca,'xtick',[1:max(xlim)])
             grid on
             grid minor
             xlabel('Principal Component (PC) Index')
             ylabel('Cumulative Sum, Variance Explained')
-            title('Sensor Principal Component Analysis (PCA)')
+            title({'Sensor Principal Component Analysis (PCA)',['\rm\fontsize{8}' Camera.description ', ' Filters.description]})
             
         figure(9)
             set(gcf,'Name','Sensor Calibration Curve','NumberTitle','off','MenuBar','none','ToolBar','none')
@@ -756,7 +757,7 @@ function hyperspectral_image_GUI
             set(gca,'position',[0.03 0.02 0.45 1.00])
             hold on
             image(flipud(Image.RGB))
-            title('Image and Sample Mesh')
+            title('Reconstructed Image and Sample Mesh')
             axis equal
             axis tight
             axis off
@@ -770,6 +771,7 @@ function hyperspectral_image_GUI
             for p = 1 : numel(X)
                 plot(Observer.lambda, squeeze(SPD(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
             end
+            ylim([0 max(ylim)])
             grid on
             grid minor
             xlabel('Wavelength, nm')
@@ -1029,14 +1031,14 @@ function hyperspectral_image_GUI
         
         switch i_ob
             
-            case 1 % CIE 1931 2°
+            case 1 % CIE 1931 2° XYZ
                 ob_sen = [
                             0.0001299 0.0002321 0.0004149 0.0007416 0.001368 0.002236 0.004243 0.00765 0.01431 0.02319 0.04351 0.07763 0.13438 0.21477 0.2839 0.3285 0.34828 0.34806 0.3362 0.3187 0.2908 0.2511 0.19536 0.1421 0.09564 0.05795001 0.03201 0.0147 0.0049 0.0024 0.0093 0.0291 0.06327 0.1096 0.1655 0.2257499 0.2904 0.3597 0.4334499 0.5120501 0.5945 0.6784 0.7621 0.8425 0.9163 0.9786 1.0263 1.0567 1.0622 1.0456 1.0026 0.9384 0.8544499 0.7514 0.6424 0.5419 0.4479 0.3608 0.2835 0.2187 0.1649 0.1212 0.0874 0.0636 0.04677 0.0329 0.0227 0.01584 0.01135916 0.008110916 0.005790346 0.004109457 0.002899327 0.00204919 0.001439971 0.0009999493 0.0006900786 0.0004760213 0.0003323011 0.0002348261 0.0001661505 0.000117413 8.307527E-05 5.870652E-05 4.150994E-05 2.935326E-05 2.067383E-05 1.455977E-05 1.025398E-05 7.221456E-06 5.085868E-06 3.581652E-06 2.522525E-06 1.776509E-06 1.251141E-06
                             3.917E-06 6.965E-06 1.239E-05 2.202E-05 3.9E-05 6.4E-05 0.00012 0.000217 0.000396 0.00064 0.00121 0.00218 0.004 0.0073 0.0116 0.01684 0.023 0.0298 0.038 0.048 0.06 0.0739 0.09098 0.1126 0.13902 0.1693 0.20802 0.2586 0.323 0.4073 0.503 0.6082 0.71 0.7932 0.862 0.9148501 0.954 0.9803 0.9949501 1 0.995 0.9786 0.952 0.9154 0.87 0.8163 0.757 0.6949 0.631 0.5668 0.503 0.4412 0.381 0.321 0.265 0.217 0.175 0.1382 0.107 0.0816 0.061 0.04458 0.032 0.0232 0.017 0.01192 0.00821 0.005723 0.004102 0.002929 0.002091 0.001484 0.001047 0.00074 0.00052 0.0003611 0.0002492 0.0001719 0.00012 8.48E-05 6E-05 4.24E-05 3E-05 2.12E-05 1.499E-05 1.06E-05 7.4657E-06 5.2578E-06 3.7029E-06 2.6078E-06 1.8366E-06 1.2934E-06 9.1093E-07 6.4153E-07 4.5181E-07
                             0.0006061 0.001086 0.001946 0.003486 0.006450001 0.01054999 0.02005001 0.03621 0.06785001 0.1102 0.2074 0.3713 0.6456 1.0390501 1.3856 1.62296 1.74706 1.7826 1.77211 1.7441 1.6692 1.5281 1.28764 1.0419 0.8129501 0.6162 0.46518 0.3533 0.272 0.2123 0.1582 0.1117 0.07824999 0.05725001 0.04216 0.02984 0.0203 0.0134 0.008749999 0.005749999 0.0039 0.002749999 0.0021 0.0018 0.001650001 0.0014 0.0011 0.001 0.0008 0.0006 0.00034 0.00024 0.00019 1E-04 4.999999E-05 3E-05 2E-05 1E-05 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
                          ];
                 
-            case 2 % CIE 1964 10°
+            case 2 % CIE 1964 10° XYZ
                 ob_sen = [
                             1.222E-07 9.1927E-07 5.9586E-06 3.3266E-05 0.000159952 0.00066244 0.0023616 0.0072423 0.0191097 0.0434 0.084736 0.140638 0.204492 0.264737 0.314679 0.357719 0.383734 0.386726 0.370702 0.342957 0.302273 0.254085 0.195618 0.132349 0.080507 0.041072 0.016172 0.005132 0.003816 0.015444 0.037465 0.071358 0.117749 0.172953 0.236491 0.304213 0.376772 0.451584 0.529826 0.616053 0.705224 0.793832 0.878655 0.951162 1.01416 1.0743 1.11852 1.1343 1.12399 1.0891 1.03048 0.95074 0.856297 0.75493 0.647467 0.53511 0.431567 0.34369 0.268329 0.2043 0.152568 0.11221 0.0812606 0.05793 0.0408508 0.028623 0.0199413 0.013842 0.00957688 0.0066052 0.00455263 0.0031447 0.00217496 0.0015057 0.00104476 0.00072745 0.000508258 0.00035638 0.000250969 0.00017773 0.00012639 9.0151E-05 6.45258E-05 4.6339E-05 3.34117E-05 2.4209E-05 1.76115E-05 1.2855E-05 9.41363E-06 6.913E-06 5.09347E-06 3.7671E-06 2.79531E-06 2.082E-06 1.55314E-06
                             1.3398E-08 1.0065E-07 6.511E-07 3.625E-06 1.7364E-05 7.156E-05 0.0002534 0.0007685 0.0020044 0.004509 0.008756 0.014456 0.021391 0.029497 0.038676 0.049602 0.062077 0.074704 0.089456 0.106256 0.128201 0.152761 0.18519 0.21994 0.253589 0.297665 0.339133 0.395379 0.460777 0.53136 0.606741 0.68566 0.761757 0.82333 0.875211 0.92381 0.961988 0.9822 0.991761 0.99911 0.99734 0.98238 0.955552 0.915175 0.868934 0.825623 0.777405 0.720353 0.658341 0.593878 0.527963 0.461834 0.398057 0.339554 0.283493 0.228254 0.179828 0.140211 0.107633 0.081187 0.060281 0.044096 0.0318004 0.0226017 0.0159051 0.0111303 0.0077488 0.0053751 0.00371774 0.00256456 0.00176847 0.00122239 0.00084619 0.00058644 0.00040741 0.000284041 0.00019873 0.00013955 9.8428E-05 6.9819E-05 4.9737E-05 3.55405E-05 2.5486E-05 1.83384E-05 1.3249E-05 9.6196E-06 7.0128E-06 5.1298E-06 3.76473E-06 2.77081E-06 2.04613E-06 1.51677E-06 1.12809E-06 8.4216E-07 6.297E-07
@@ -1060,7 +1062,7 @@ function hyperspectral_image_GUI
             for cc = 1 : 3
                 col = [0 0 0];
                 col(cc) = 1;
-                plot(Observer.lambda, Observer.sensitivity(:,cc), 'Color', col)
+                plot(Observer.lambda, Observer.sensitivity(:,cc), 'Color', col,'LineWidth',2)
             end
             grid on
             grid minor
@@ -1069,6 +1071,8 @@ function hyperspectral_image_GUI
             title(['Observer: ' Observer.description])
             xlim(lambda_lims)
             ylim([0 max(ylim)])
+            legend({'$\bar{x}$','$\bar{y}$','$\bar{z}$'},'location','northeast','Interpreter','Latex','FontSize',12)
+
             
         update_filters % update filter color
         
@@ -1285,7 +1289,7 @@ function hyperspectral_image_GUI
             for cc = 1:3
                 col = [0 0 0];
                 col(cc) = 1;
-                plot(Camera.lambda, Camera.RGB_observer(:,cc), 'Color', col)
+                plot(Camera.lambda, Camera.RGB_observer(:,cc), 'Color', col,'LineWidth',2)
             end
             grid on
             grid minor

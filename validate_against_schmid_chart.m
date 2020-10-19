@@ -59,7 +59,7 @@
     miniplot_size         = [1/19 1/12]; % ~
     
     % Add descriptive title to top
-    text(mean(xlim), min(ylim), ' \bfValidation of SPD Estimation Using Schmid Color Chart. \rmPlots compare measured vs. estimated (solid vs. dotted) SPD, normalized 0-1, over domain of 400-700 nm, corresponding to each swatch. CIE 1931 2° Observer, D65 Illuminant. ', 'HorizontalAlignment','center','VerticalAlignment','top','BackgroundColor','w')
+    text(mean(xlim), min(ylim), ' \bfValidation of SPD Estimation Using Schmid Color Chart. \rmPlots compare measured vs. estimated (solid vs. dotted) SPD, normalized 0-1, over domain of 400-700 nm, corresponding to each swatch. CIE 1931 2° XYZ Observer, D65 Illuminant. ', 'HorizontalAlignment','center','VerticalAlignment','top','BackgroundColor','w')
     
     max_SPD = max(SPD(:));
     
@@ -147,6 +147,9 @@
         grid on
         grid minor
         ylim([0 max(ylim)])
+        
+        pos = get(gcf,'position');
+        set(gcf,'position',[pos(1:2) round([560 400] .* 0.75)])
     
 %     save('Schmid_validation_position','POS_CENTROID','POS_MIDTONE')
 

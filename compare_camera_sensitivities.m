@@ -59,9 +59,11 @@
         ylabel('Normalized Sensitivity, ~')
         title('Comparison of Canon Camera Spectral Sensitivities')
         
-        
-        
     end
+    
+    
+    
+    xlim([400 700])
     
     legend({'Canon 300D','Canon 500D','Canon 600D'}, 'location','northeast')
     

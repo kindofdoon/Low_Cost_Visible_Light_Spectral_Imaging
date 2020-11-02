@@ -68,7 +68,7 @@ function hyperspectral_image_GUI
                             'No Filter(s)'
                           };
     uicontrol('Style','text', 'String','Filters: ', 'Position',[GUI.label_x, Select_Filters.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',5, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',4, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Filters.handle,'Callback',@(hObject,eventdata) update_filters)
     
     Select_Illuminant.pos = [GUI.input_x, Select_Filters.pos(2)-GUI.gap_small, GUI.input_dims];
@@ -117,7 +117,7 @@ function hyperspectral_image_GUI
                             'SONY NEX-5N'
                          };
     uicontrol('Style','text', 'String','Camera: ', 'Position',[GUI.label_x, Select_Camera.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Select_Camera.handle = uicontrol('Style','popupmenu', 'String',Select_Camera.vals, 'Value',8, 'Position',Select_Camera.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Select_Camera.handle = uicontrol('Style','popupmenu', 'String',Select_Camera.vals, 'Value',3, 'Position',Select_Camera.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Camera.handle,'Callback',@(hObject,eventdata) update_camera)
     
     Select_Observer.pos = [GUI.input_x, Select_Camera.pos(2)-GUI.gap_small, GUI.input_dims];
@@ -844,7 +844,7 @@ function hyperspectral_image_GUI
                                 timestamp...
                             ];
                         
-                imwrite(Image.RGB, [Photos.pathdir '\' fn_export '.' Photos.extension])
+                imwrite(Image.RGB, [Photos.pathdir '\' fn_export '.jpg'])
                 
                 figure(12)
                     set(gcf, 'PaperPositionMode', 'auto')
@@ -880,8 +880,13 @@ function hyperspectral_image_GUI
             Photos.filenames{f} = [Photos.prefix num2str(Photos.base_num-1+f) '.' Photos.extension];
         end
         
-        % Get size of first image
-        RGB = imread([Photos.pathdir '\' Photos.filenames{1}]);
+        % Get dimensions of first image
+        switch Photos.extension
+            case {'CR2','CRW'}
+                [~, RGB, ~] = extract_RAW_via_dcraw(Photos.pathdir, Photos.filenames{1}, 'rggb', 0, 0, 0);
+            otherwise
+                RGB = imread([Photos.pathdir '\' Photos.filenames{1}]);
+        end
         Photos.res_orig = [size(RGB,1), size(RGB,2)];
 
         tic
@@ -899,8 +904,24 @@ function hyperspectral_image_GUI
             sr = floor(tr-mr*60); % sec remaining
             waitbar(status,h,['Loading ' regexprep(Photos.filenames{p},'\_','\\_') '...' num2str(mr) ':' num2str(sr) ' remaining'])
             
-            RGB = imread([Photos.pathdir '\' Photos.filenames{p}]);
-            Photos.RGB_orig{p} = double(RGB) ./ 255;
+            switch Photos.extension
+                case {'CR2','CRW'}
+                    [~, RGB, ~] = extract_RAW_via_dcraw(Photos.pathdir, Photos.filenames{p}, 'rggb', 0, 0, 0);
+                otherwise
+                    RGB = imread([Photos.pathdir '\' Photos.filenames{p}]);
+            end
+            
+            switch class(RGB)
+                case 'uint8'
+                    RGB = double(RGB) ./ (2^8-1);
+                case 'uint16'
+                    max(RGB(:))
+                    RGB = double(RGB) ./ (2^16-1);
+                otherwise
+                    error('Unrecognized photo file class')
+            end
+            
+            Photos.RGB_orig{p} = RGB;
 
         end
 

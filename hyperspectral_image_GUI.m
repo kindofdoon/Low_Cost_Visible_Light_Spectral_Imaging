@@ -22,7 +22,7 @@ function hyperspectral_image_GUI
     
     % Default sizes for all figures
     GUI.fig_sizes = [
-                        360 835                     % 1:  control panel
+                        360 895                     % 1:  control panel
                         GUI.fig_size_basic          % 2:  observer
                         GUI.fig_size_basic          % 3:  illuminant
                         GUI.fig_size_basic          % 4:  camera
@@ -39,7 +39,7 @@ function hyperspectral_image_GUI
     %% Constants
     
     % Computation
-    lambda_lims = [400, 700]; % nm, wavelength limits
+    lambda_lims = [420,660];%[400, 700]; % nm, wavelength limits
     
     % GUI
     GUI.label_off_vert = 4; % px, label offset, vertical
@@ -47,7 +47,7 @@ function hyperspectral_image_GUI
     GUI.gap_small = GUI.gap_small + GUI.input_dims(2);
     GUI.gap_large = GUI.gap_large + GUI.input_dims(2);
     
-    pca_explain_thresh = 0.99;
+%     pca_explain_thresh = 0.99;
     
     %%
     
@@ -67,8 +67,8 @@ function hyperspectral_image_GUI
                             'ThorLabs Qty. 7 CWL 420:40:660 FWHM 10'
                             'No Filter(s)'
                           };
-    uicontrol('Style','text', 'String','Filters: ', 'Position',[GUI.label_x, Select_Filters.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',4, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    uicontrol('Style','text', 'String','Filters: ', 'Position',[GUI.label_x, Select_Filters.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',5, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Filters.handle,'Callback',@(hObject,eventdata) update_filters)
     
     Select_Illuminant.pos = [GUI.input_x, Select_Filters.pos(2)-GUI.gap_small, GUI.input_dims];
@@ -81,8 +81,8 @@ function hyperspectral_image_GUI
                                 'D75, North Sky Daylight'
                                 'Equal Intensity'
                              };
-    uicontrol('Style','text', 'String','Illuminant: ', 'Position',[GUI.label_x, Select_Illuminant.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Select_Illuminant.handle = uicontrol('Style','popupmenu', 'String',Select_Illuminant.vals, 'Value',5, 'Position',Select_Illuminant.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    uicontrol('Style','text', 'String','Illuminant: ', 'Position',[GUI.label_x, Select_Illuminant.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    Select_Illuminant.handle = uicontrol('Style','popupmenu', 'String',Select_Illuminant.vals, 'Value',7, 'Position',Select_Illuminant.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Illuminant.handle,'Callback',@(hObject,eventdata) update_illuminant)
     
     Select_Camera.pos = [GUI.input_x, Select_Illuminant.pos(2)-GUI.gap_small, GUI.input_dims];
@@ -115,99 +115,113 @@ function hyperspectral_image_GUI
                             'Point Grey Grasshopper2 14S5C'
                             'Phase One'
                             'SONY NEX-5N'
+                            'Canon 650D Noon Sky 2021-01-09'
                          };
-    uicontrol('Style','text', 'String','Camera: ', 'Position',[GUI.label_x, Select_Camera.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Select_Camera.handle = uicontrol('Style','popupmenu', 'String',Select_Camera.vals, 'Value',3, 'Position',Select_Camera.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    uicontrol('Style','text', 'String','Camera: ', 'Position',[GUI.label_x, Select_Camera.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    Select_Camera.handle = uicontrol('Style','popupmenu', 'String',Select_Camera.vals, 'Value',29, 'Position',Select_Camera.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Camera.handle,'Callback',@(hObject,eventdata) update_camera)
     
     Select_Observer.pos = [GUI.input_x, Select_Camera.pos(2)-GUI.gap_small, GUI.input_dims];
     Select_Observer.vals = {'CIE 1931 2° XYZ','CIE 1964 10° XYZ'};
-    uicontrol('Style','text', 'String','Observer: ', 'Position',[GUI.label_x, Select_Observer.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Observer: ', 'Position',[GUI.label_x, Select_Observer.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Select_Observer.handle = uicontrol('Style','popupmenu', 'String',Select_Observer.vals, 'Position',Select_Observer.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Observer.handle,'Callback',@(hObject,eventdata) update_observer)
     
     Select_Calibration.pos = [GUI.input_x, Select_Observer.pos(2)-GUI.gap_small, GUI.input_dims];
     Select_Calibration.vals = {'Schmid D65','Custom','None'};
-    uicontrol('Style','text', 'String','Calibration: ', 'Position',[GUI.label_x, Select_Calibration.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Calibration: ', 'Position',[GUI.label_x, Select_Calibration.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Select_Calibration.handle = uicontrol('Style','popupmenu', 'String',Select_Calibration.vals, 'Value',3, 'Position',Select_Calibration.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Calibration.handle,'Callback',@(hObject,eventdata) update_sensor)
     
-    Load_Photos.pos = [GUI.input_x, Select_Calibration.pos(2)-GUI.gap_small, GUI.input_dims];
+    Select_Mode.pos = [GUI.input_x, Select_Calibration.pos(2)-GUI.gap_small, GUI.input_dims];
+    Select_Mode.vals = {'Wide Basic','Narrow Idealized'};
+    uicontrol('Style','text', 'String','Mode: ', 'Position',[GUI.label_x, Select_Mode.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    Select_Mode.handle = uicontrol('Style','popupmenu', 'String',Select_Mode.vals, 'Value',2, 'Position',Select_Mode.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(Select_Mode.handle,'Callback',@(hObject,eventdata) update_sensor)
+    
+    Load_Photos.pos = [GUI.input_x, Select_Mode.pos(2)-GUI.gap_small, GUI.input_dims];
     Load_Photos.handle = uicontrol('Style','pushbutton', 'String','Load Photos', 'Position',Load_Photos.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Load_Photos.handle,'Callback',@(hObject,eventdata) load_photos)
 
     %% Resolution
     
     Preview_Res.pos = [GUI.input_x, Load_Photos.pos(2)-GUI.gap_large, GUI.input_dims];
-    uicontrol('Style','text', 'String','Preview Res, px: ', 'Position',[GUI.label_x, Preview_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Preview Res, px: ', 'Position',[GUI.label_x, Preview_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Preview_Res.handle = uicontrol('Style','edit', 'String','500', 'Position',Preview_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Export_Res.pos = [GUI.input_x, Preview_Res.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Export Res, px: ', 'Position',[GUI.label_x, Export_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Export Res, px: ', 'Position',[GUI.label_x, Export_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Export_Res.handle = uicontrol('Style','edit', 'String','2000', 'Position',Export_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
-    Wavelength_Res.pos = [GUI.input_x, Export_Res.pos(2)-GUI.gap_small, GUI.input_dims];
+    %% Wavelength domain
+    
+    Wavelength_Res.pos = [GUI.input_x, Export_Res.pos(2)-GUI.gap_large, GUI.input_dims];
     Wavelength_Res.vals = {'1','2','5','10','20','25','50','100'};
-    uicontrol('Style','text', 'String','Wavelength Res, nm: ', 'Position',[GUI.label_x, Wavelength_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Wavelength Res, nm: ', 'Position',[GUI.label_x, Wavelength_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Wavelength_Res.handle = uicontrol('Style','popupmenu', 'String',Wavelength_Res.vals, 'Value',5, 'Position',Wavelength_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Wavelength_Res.handle,'Callback',@(hObject,eventdata) update_wavelength)
+    
+    CWL_Rounding.pos = [GUI.input_x, Wavelength_Res.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','CWL Rounding, nm: ', 'Position',[GUI.label_x, CWL_Rounding.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    CWL_Rounding.handle = uicontrol('Style','edit', 'String','10', 'Position',CWL_Rounding.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(CWL_Rounding.handle,'Callback',@(hObject,eventdata) update_sensor)
+    
+    Minimum_Sensitivity.pos = [GUI.input_x, CWL_Rounding.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','Minimum Sensitivity: ', 'Position',[GUI.label_x, Minimum_Sensitivity.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    Minimum_Sensitivity.handle = uicontrol('Style','edit', 'String','0.01', 'Position',Minimum_Sensitivity.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    set(Minimum_Sensitivity.handle,'Callback',@(hObject,eventdata) update_sensor)
 
     %% Camera gains
     
-    Gain_R.pos = [GUI.input_x, Wavelength_Res.pos(2)-GUI.gap_large, GUI.input_dims];
-    uicontrol('Style','text', 'String','Gain, Camera R: ', 'Position',[GUI.label_x, Gain_R.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Gain_R.pos = [GUI.input_x, Minimum_Sensitivity.pos(2)-GUI.gap_large, GUI.input_dims];
+    uicontrol('Style','text', 'String','Gain, Camera R: ', 'Position',[GUI.label_x, Gain_R.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Gain_R.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gain_R.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Gain_R.handle,'Callback',@(hObject,eventdata) update_camera)
     
     Gain_G.pos = [GUI.input_x, Gain_R.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Gain, Camera G: ', 'Position',[GUI.label_x, Gain_G.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Gain, Camera G: ', 'Position',[GUI.label_x, Gain_G.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Gain_G.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gain_G.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Gain_G.handle,'Callback',@(hObject,eventdata) update_camera)
     
     Gain_B.pos = [GUI.input_x, Gain_G.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Gain, Camera B: ', 'Position',[GUI.label_x, Gain_B.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Gain, Camera B: ', 'Position',[GUI.label_x, Gain_B.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Gain_B.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gain_B.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Gain_B.handle,'Callback',@(hObject,eventdata) update_camera)
     
-    Minimum_Sensitivity.pos = [GUI.input_x, Gain_B.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Minimum Sensitivity: ', 'Position',[GUI.label_x, Minimum_Sensitivity.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
-    Minimum_Sensitivity.handle = uicontrol('Style','edit', 'String','0.01', 'Position',Minimum_Sensitivity.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    set(Minimum_Sensitivity.handle,'Callback',@(hObject,eventdata) update_sensor)
-    
-    Calibration_Wavelengths.pos = [GUI.input_x, Minimum_Sensitivity.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Calibration Wavelengths: ', 'Position',[GUI.label_x, Calibration_Wavelengths.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    Calibration_Wavelengths.pos = [GUI.input_x, Gain_B.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','Calibration Wavelengths: ', 'Position',[GUI.label_x, Calibration_Wavelengths.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Calibration_Wavelengths.handle = uicontrol('Style','edit', 'String','', 'Position',Calibration_Wavelengths.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Calibration_Gains.pos = [GUI.input_x, Calibration_Wavelengths.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Calibration Gains: ', 'Position',[GUI.label_x, Calibration_Gains.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Calibration Gains: ', 'Position',[GUI.label_x, Calibration_Gains.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Calibration_Gains.handle = uicontrol('Style','edit', 'String','', 'Position',Calibration_Gains.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     %% Value scaling
     
     Gamma.pos = [GUI.input_x, Calibration_Gains.pos(2)-GUI.gap_large, GUI.input_dims];
-    uicontrol('Style','text', 'String','Gamma: ', 'Position',[GUI.label_x, Gamma.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Gamma: ', 'Position',[GUI.label_x, Gamma.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Gamma.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gamma.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Fraction_Saturated_Low.pos = [GUI.input_x, Gamma.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Fraction Saturated, Low: ', 'Position',[GUI.label_x, Fraction_Saturated_Low.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Fraction Saturated, Low: ', 'Position',[GUI.label_x, Fraction_Saturated_Low.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Fraction_Saturated_Low.handle = uicontrol('Style','edit', 'String','0.01', 'Position',Fraction_Saturated_Low.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Fraction_Saturated_High.pos = [GUI.input_x, Fraction_Saturated_Low.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Fraction Saturated, High: ', 'Position',[GUI.label_x, Fraction_Saturated_High.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Fraction Saturated, High: ', 'Position',[GUI.label_x, Fraction_Saturated_High.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Fraction_Saturated_High.handle = uicontrol('Style','edit', 'String','0.01', 'Position',Fraction_Saturated_High.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
 
     Value_Low.pos = [GUI.input_x, Fraction_Saturated_High.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Value, Low: ', 'Position',[GUI.label_x, Value_Low.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Value, Low: ', 'Position',[GUI.label_x, Value_Low.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Value_Low.handle = uicontrol('Style','edit', 'String','0.05', 'Position',Value_Low.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Value_High.pos = [GUI.input_x, Value_Low.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Value, High: ', 'Position',[GUI.label_x, Value_High.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Value, High: ', 'Position',[GUI.label_x, Value_High.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Value_High.handle = uicontrol('Style','edit', 'String','0.95', 'Position',Value_High.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     %% Outputs
     
     Mesh_Density.pos = [GUI.input_x, Value_High.pos(2)-GUI.gap_large, GUI.input_dims];
-    uicontrol('Style','text', 'String','Mesh Density, pt/side: ', 'Position',[GUI.label_x, Mesh_Density.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','right');
+    uicontrol('Style','text', 'String','Mesh Density, pt/side: ', 'Position',[GUI.label_x, Mesh_Density.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Mesh_Density.handle = uicontrol('Style','edit', 'String','10', 'Position',Mesh_Density.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     %% Execution/Control
@@ -262,6 +276,7 @@ function hyperspectral_image_GUI
     function update_wavelength
         
         Wavelength = min(lambda_lims) : str2double(Wavelength_Res.vals{get(Wavelength_Res.handle, 'value')}) : max(lambda_lims);
+        Wavelength = Wavelength'; % to column vector
         update_observer
         update_filters
         update_camera
@@ -298,23 +313,23 @@ function hyperspectral_image_GUI
             end
         end
 
-        sen_min = str2double(get(Minimum_Sensitivity.handle, 'string'));
-        Sensor.sen_min = sen_min * max(Sensor.sensitivity(:));
-        Sensor.ind_low_sen = find(Sensor.sensitivity<Sensor.sen_min); % indices of low sensitivity
-        Sensor.sensitivity(Sensor.sensitivity < Sensor.sen_min) = Sensor.sen_min;
-
-        S = repmat(Camera.RGB_observer', [Filters.qty, 1, 1]);
-        i = ceil((1 : Filters.qty*3)./3);
-        T = Filters.T(:,i)';
-
-        ST = S .* T;
-
-        switch Filters.mode
-            case 'overlapping'
-                [coeff,score,latent,tsquared,explained,mu] = pca(ST);
-                explained = explained ./ 100; % percent to fraction, 0-100 to 0-1
-            case 'sparse'
+        % Take dot product of camera sensitivities (S) and filter transmissions (T)
+        switch get(Select_Mode.handle, 'value')
+            case 1 % Wide Basic
                 % Do nothing
+            case 2 % Narrow Idealized
+                % Take dot of S (camera sensitivities) and (filter transmissions)
+                Sensor.S_dot_T = zeros(Filters.qty, 3);
+                S_min = min(Camera.Sen_orig(:));
+                for cc = 1 : 3
+                    S_ = interp1(Camera.lam_orig, Camera.Sen_orig(:,cc), Filters.lam_orig, 'pchip','extrap');
+                    S_(S_<S_min) = S_min;
+                    for i_lam = 1 : Filters.qty
+                        Sensor.S_dot_T(i_lam,cc) = dot(S_, Filters.T_orig(:,i_lam));
+                    end
+                end
+            otherwise
+                error('Unrecognized mode')
         end
         
         % Prepare calibration
@@ -355,7 +370,7 @@ function hyperspectral_image_GUI
             set(gcf,'Name','Sensor Sensitivity','NumberTitle','off','MenuBar','none','ToolBar','none')
             clf
             set(gcf,'color','white')
-            plot(Wavelength, Sensor.sensitivity, 'k')
+            plot(Wavelength(Filters.ind_stations), Sensor.sensitivity(Filters.ind_stations), 'k-o')
             axis([min(Wavelength) max(Wavelength) 0 max(ylim)])
             grid on
             grid minor
@@ -366,26 +381,26 @@ function hyperspectral_image_GUI
         figure(8)
             set(gcf,'Name','Sensor PCA','NumberTitle','off','MenuBar','none','ToolBar','none')
             clf
-            hold on
-            set(gcf,'color','white')
-            
-            switch Filters.mode
-                case 'overlapping'
-                    cse = cumsum(explained);
-                    ind = min(find(cse > pca_explain_thresh));
-                    plot([ind ind], [0 1], 'r')
-                    plot(1:length(explained), cse, 'k-o')
-                    text(ind, 0.5, {[' ' num2str(ind) ' PC explain'], [' \geq ' num2str(round(pca_explain_thresh*100)) '% of variance']},'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',9)
-                    axis([1 10 0 1])
-                    set(gca,'xtick',[1:max(xlim)])
-                    grid on
-                    grid minor
-                    xlabel('Principal Component (PC) Index')
-                    ylabel('Cumulative Sum, Variance Explained')
-                    title({'Sensor Principal Component Analysis (PCA)',['\rm\fontsize{8}' Camera.description ', ' Filters.description]})
-                case 'sparse'
-                    % Do nothing
-            end
+%             hold on
+%             set(gcf,'color','white')
+%             
+% %             switch Filters.mode
+% %                 case 'overlapping'
+%                     cse = cumsum(explained);
+%                     ind = min(find(cse > pca_explain_thresh));
+%                     plot([ind ind], [0 1], 'r')
+%                     plot(1:length(explained), cse, 'k-o')
+%                     text(ind, 0.5, {[' ' num2str(ind) ' PC explain'], [' \geq ' num2str(round(pca_explain_thresh*100)) '% of variance']},'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',9)
+%                     axis([1 10 0 1])
+%                     set(gca,'xtick',[1:max(xlim)])
+%                     grid on
+%                     grid minor
+%                     xlabel('Principal Component (PC) Index')
+%                     ylabel('Cumulative Sum, Variance Explained')
+%                     title({'Sensor Principal Component Analysis (PCA)',['\rm\fontsize{8}' Camera.description ', ' Filters.description]})
+% %                 case 'sparse'
+% %                     % Do nothing
+% %             end
             
         figure(9)
             set(gcf,'Name','Sensor Calibration Curve','NumberTitle','off','MenuBar','none','ToolBar','none')
@@ -469,7 +484,7 @@ function hyperspectral_image_GUI
     
     function generate_GIF
         
-        if ~isfield(Photos, 'RGB_orig')
+        if ~isfield(Photos, 'RGB_calc')
             warning('No photos loaded, cannot generate GIF')
             return
         end
@@ -566,7 +581,7 @@ function hyperspectral_image_GUI
     end
 
     function preview_image
-        if ~isfield(Photos, 'RGB_orig')
+        if ~isfield(Photos, 'RGB_calc')
             warning('No photos loaded, cannot generate image')
             return
         end
@@ -576,7 +591,7 @@ function hyperspectral_image_GUI
     end
 
     function export_image
-        if ~isfield(Photos, 'RGB_orig')
+        if ~isfield(Photos, 'RGB_calc')
             warning('No photos loaded, cannot generate image')
             return
         end
@@ -587,147 +602,82 @@ function hyperspectral_image_GUI
 
     function generate_image
 
-        % The core function in which the hyperspectral datacube and image are calculated
+        % The core function in which SPDs and a reconstructed image are calculated
         
-        % Rescale all photos
-        Photos.RGB = cell(size(Photos.RGB_orig));
+        % Rescale all photos in width and height, if necessary
+        Photos.RGB = cell(size(Photos.RGB_calc));
         for p = 1 : Photos.qty
             if Photos.scale < 1
-                Photos.RGB{p} = imresize(Photos.RGB_orig{p}, Photos.scale);
+                Photos.RGB{p} = imresize(Photos.RGB_calc{p}, Photos.scale);
             else
-                Photos.RGB{p} = Photos.RGB_orig{p};
+                Photos.RGB{p} = Photos.RGB_calc{p};
             end
         end
         Photos.res = [size(Photos.RGB{1},1), size(Photos.RGB{1},2)];
-
-        status_old = 0;
-        tic
-        msg = 'Generating datacube...';
-        h = waitbar(0,msg);
         
-        qty_lam = length(Wavelength);
-        IL = reshape(Illuminant.power, [1, 1, qty_lam]);
-        IL = repmat(IL, [Photos.res, 1]);
-        
-        switch Filters.mode
-            
-            case 'overlapping'
+        qty_lam_calc   = length(Filters.stations); % coarse
+        qty_lam_report = length(Wavelength); % fine
                 
-                SPD = zeros(Photos.res(1), Photos.res(2), qty_lam); % initialize datacube
+        SPD = zeros(Photos.res(1), Photos.res(2), qty_lam_calc); % initialize datacube
 
+        switch get(Select_Mode.handle, 'value')
+            
+            case 1 % Wide Basic
+                
                 for f = 1 : Filters.qty % for each filter/image pair
-
-                    T = Filters.T(:,f); % transmittance, filter
-
                     for cc = 1 : 3 % for each color channel
-
-                        S = Camera.RGB_observer(:,cc); % sensitivity, camera
-                        ST = S .* T;
-
-                        ST = reshape(ST, [1, 1, qty_lam]);
-                        ST = repmat(ST, [Photos.res, 1]);
-
-                        VAL = Photos.RGB{f}(:,:,cc); % 0 to 1
-                        VAL = repmat(VAL, [1,1, qty_lam]);
-
-                        SPD = SPD + ST .* VAL;
-
-                        % Update waitbar
-                        status_new = round(((f-1)*3+cc)/(Filters.qty*3)*100);
-                        if status_new > status_old
-                            status = status_new/100;
-                            tr = toc/status*(1-status); % sec, time remaining
-                            mr = floor(tr/60); % minutes remaining
-                            sr = floor(tr-mr*60); % sec remaining
-                            waitbar(status,h,[msg num2str(mr) ':' num2str(sr) ' remaining'])
-                            status_old = status_new;
-                        end
-
+                        VAL = Photos.RGB{f}(:,:,cc);
+                        SPD(:,:,f) = SPD(:,:,f) + VAL ./ Sensor.S_dot_T(f,cc);
                     end
                 end
                 
-                SEN = reshape(Sensor.sensitivity, [1,1,qty_lam]);
-                SEN = repmat(SEN, [Photos.res,1]);
-
-                SPD = SPD ./ SEN; % normalize to maximum response
+            case 2 % Narrow Idealized
                 
-            case 'sparse'
-                
-                SPD = zeros(Photos.res(1), Photos.res(2), Filters.qty); % initialize datacube
-                
-                % Sensitivity
-                S_sparse = zeros(Filters.qty, 3); % camera sensitivity
-                T_sparse = zeros(Filters.qty, 1); % filter transmission
-                
-                for f = 1 : Filters.qty % for each CWL (also each photo/filter pair)
-                    
-                    for cc = 1 : 3
-                        S_sparse(f,cc) = interp1(Camera.lambda, Camera.RGB_observer(:,cc),  Filters.CWL(f));
-                    end
-                    T_sparse(f) = interp1(Filters.lambda_raw, Filters.T_raw(:,f), Filters.CWL(f));
-                    
-                    SPD(:,:,f) = sum(Photos.RGB{f},3);
-                    
+                for w = 1 : qty_lam_calc % for each wavelength
+                    S = sum(Camera.RGB_observer(Filters.ind_stations(w),:));
+                    T = Filters.T(Filters.ind_stations(w),w);
+                    ST = S * T;
+                    ST = repmat(ST, [size(SPD,1),size(SPD,2)]);
+                    RGB = Photos.RGB{w};
+                    SPD(:,:,w) = sum(RGB,3) ./ (ST);
                 end
                 
-                % Normalize
-                T_sparse = repmat(T_sparse,[1,3]);
-                ST_sparse = S_sparse .* T_sparse;
-                ST = sum(ST_sparse, 2); % sum across wavelengths
-                
-                figure(89)
-                plot(Filters.CWL, ST)
-                
-                SEN = reshape(ST, [1,1,Filters.qty]);
-                SEN = repmat(SEN, [Photos.res,1]);
-                SPD = SPD ./ SEN;
-                
-                % Interpolate and extrapolate
-                [X, Y, W]    = meshgrid(1:Photos.res(2), 1:Photos.res(1), Filters.CWL);
-                [Xq, Yq, Wq] = meshgrid(1:Photos.res(2), 1:Photos.res(1), Wavelength);
-                SPD = interp3(X, Y, W, SPD, Xq, Yq, Wq, 'spline');
-                
-        end
-
-        SPD = SPD .* IL; % scale by illuminant
+            otherwise
         
-        % Account for low-sensitivity wavelengths
-        switch Filters.mode
-            
-            case 'overlapping'
-                for w = 1 : size(SPD,3)
-                    if ~ismember(Sensor.ind_low_sen, w)
-                        continue
-                    end
-                    % Find and set to closest valid wavelength
-                    wave = 1 : size(SPD,3);
-                    wave(Sensor.ind_low_sen) = [];
-                    [~, ind_closest] = min(abs(wave-w));
-                    SPD(:,:,w) = SPD(:,:,wave(ind_closest));
-                end
-                
-            case 'sparse'
-                % Do nothing
-                
+                error('Unrecognized mode')
+        
         end
+        
+        % Apply illuminant
+        IL = reshape(Illuminant.power(Filters.ind_stations), [1,1,qty_lam_calc]);
+        IL = repmat(IL, [Photos.res, 1]);
+        SPD = SPD .* IL;
         
         % Apply calibration
-        calib = reshape(Sensor.calibration_gain, [1,1,length(Wavelength)]);
-        calib = repmat(calib, [Photos.res,1]);
-        SPD = SPD .* calib;
+        CALIB = reshape(Sensor.calibration_gain(Filters.ind_stations), [1,1,qty_lam_calc]);
+        CALIB = repmat(CALIB, [Photos.res,1]);
+        SPD = SPD .* CALIB;
+
+        % Interpolate and extrapolate
+        msg = 'Interpolating and extrapolating datacube...';
+        h = waitbar(0,msg);
+        [X,  Y,  W]  = meshgrid(1:Photos.res(2), 1:Photos.res(1), Wavelength(Filters.ind_stations));
+        [Xq, Yq, Wq] = meshgrid(1:Photos.res(2), 1:Photos.res(1), Wavelength);
+        if ~isequal(W, Wq)
+            SPD = interp3(X, Y, W, SPD, Xq, Yq, Wq, 'spline');
+        end
+        close(h)
 
         % Normalize
         SPD = SPD ./ max(SPD(:));
-        
-        close(h)
         
         % Generate XYZ colors
         Image.XYZ = zeros(Photos.res(1), Photos.res(2), 3);
 
         % Reshape along third (wavelength) dimension
-        X_C = reshape(Observer.sensitivity(:,1), [1, 1, qty_lam]);
-        Y_C = reshape(Observer.sensitivity(:,2), [1, 1, qty_lam]);
-        Z_C = reshape(Observer.sensitivity(:,3), [1, 1, qty_lam]);
+        X_C = reshape(Observer.sensitivity(:,1), [1, 1, qty_lam_report]);
+        Y_C = reshape(Observer.sensitivity(:,2), [1, 1, qty_lam_report]);
+        Z_C = reshape(Observer.sensitivity(:,3), [1, 1, qty_lam_report]);
 
         % Repeat for each pixel
         X_C = repmat(X_C,[Photos.res, 1]);
@@ -822,7 +772,13 @@ function hyperspectral_image_GUI
             for p = 1 : numel(X)
                 plot(Observer.lambda, squeeze(SPD(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
             end
+            xlim(lambda_lims)
             ylim([0 max(ylim)])
+            if length(Filters.stations) <= 10
+                for s = 1 : length(Filters.stations)
+                    plot(zeros(1,2)+Filters.stations(s), ylim, 'Color', zeros(1,3)+0.5)
+                end
+            end
             grid on
             grid minor
             xlabel('Wavelength, nm')
@@ -872,33 +828,29 @@ function hyperspectral_image_GUI
         
         % Generate sequential filenames for photo stack
         Photos.filenames = cell(Filters.qty, 1);
-        Photos.base_num = str2double(regexprep(Photos.filename_first, '[^0-9]+', ''));
         Photos.extension = regexprep(Photos.filename_first, '[^\.]+\.','');
+        fn_without_extension = regexprep(Photos.filename_first, Photos.extension, '');
+        Photos.base_num = str2double(regexprep(fn_without_extension, '[^0-9]+', ''));
         Photos.prefix = regexprep(Photos.filename_first, '[0-9]+.+','');
         Photos.filenames{1} = Photos.filename_first;
         for f = 2 : Filters.qty
             Photos.filenames{f} = [Photos.prefix num2str(Photos.base_num-1+f) '.' Photos.extension];
         end
-        
-        % Get dimensions of first image
-        switch Photos.extension
-            case {'CR2','CRW'}
-                [~, RGB, ~] = extract_RAW_via_dcraw(Photos.pathdir, Photos.filenames{1}, 'rggb', 0, 0, 0);
-            otherwise
-                RGB = imread([Photos.pathdir '\' Photos.filenames{1}]);
-        end
-        Photos.res_orig = [size(RGB,1), size(RGB,2)];
 
         tic
         h = waitbar(0,'');
 
         Photos.qty = length(Photos.filenames);
-        Photos.RGB_orig = cell(Photos.qty, 1);
+        Photos.RGB_calc    = cell(Photos.qty, 1); % for SPD calculation
+        Photos.RGB_preview = cell(Photos.qty, 1); % for display only
+        Photos.min_val     = zeros(Photos.qty, 1); % for display only
+        Photos.max_val     = zeros(Photos.qty, 1); % for display only
 
+        % Load data from files
         for p = 1 : Photos.qty
 
             % Update waitbar
-            status = p / Photos.qty;
+            status = p / (Photos.qty+1);
             tr = toc/status*(1-status); % sec, time remaining
             mr = floor(tr/60); % minutes remaining
             sr = floor(tr-mr*60); % sec remaining
@@ -906,22 +858,36 @@ function hyperspectral_image_GUI
             
             switch Photos.extension
                 case {'CR2','CRW'}
-                    [~, RGB, ~] = extract_RAW_via_dcraw(Photos.pathdir, Photos.filenames{p}, 'rggb', 0, 0, 0);
+                    [~, RGB_calc, RGB_preview] = extract_RAW_via_dcraw(Photos.pathdir, Photos.filenames{p}, 'rggb', '-D -4 -j -t 0', 0, 1, 0);
+                    RGB_calc = RGB_calc - 2048;
+                    qty_neg = length(find(RGB_calc<0));
+                    if qty_neg > 0
+                        warning([Photos.filenames{p} ' contains ' num2str(qty_neg) ' negative pixels after black level offset'])
+                    end
+                    Photos.RGB_preview{p} = RGB_preview;
                 otherwise
-                    RGB = imread([Photos.pathdir '\' Photos.filenames{p}]);
+                    RGB_calc = imread([Photos.pathdir '\' Photos.filenames{p}]);
+                    Photos.RGB_preview{p} = RGB_calc;
             end
             
-            switch class(RGB)
-                case 'uint8'
-                    RGB = double(RGB) ./ (2^8-1);
-                case 'uint16'
-                    max(RGB(:))
-                    RGB = double(RGB) ./ (2^16-1);
-                otherwise
-                    error('Unrecognized photo file class')
+            if p == 1 % First image in the stack sets the standard width and height
+                Photos.res_orig = [size(RGB_calc,1), size(RGB_calc,2)];
             end
+                        
+%             switch class(RGB_calc)
+%                 case 'uint8'
+%                     RGB_calc = double(RGB_calc) ./ (2^8-1);
+%                 case 'uint16'
+%                     RGB_calc = double(RGB_calc) ./ (2^14-1);
+%                 otherwise
+%                     error('Unrecognized photo file class')
+%             end
             
-            Photos.RGB_orig{p} = RGB;
+%             disp([Photos.filenames{p} ' has range [' num2str(round(min(RGB_calc(:))*1000)/10) ' ' num2str(round(max(RGB_calc(:))*1000)/10) ']%'])
+            
+            Photos.RGB_calc{p} = RGB_calc;
+            Photos.min_val(p)  = min(RGB_calc(:));
+            Photos.max_val(p)  = max(RGB_calc(:));
 
         end
 
@@ -939,16 +905,40 @@ function hyperspectral_image_GUI
             set(gcf,'color','white')
             preview_res = 500; % px
             for p = 1 : Photos.qty
-                im = imresize(Photos.RGB_orig{p}, preview_res/max(Photos.res_orig));
+                im = imresize(Photos.RGB_preview{p}, preview_res/max(Photos.res_orig));
                 image(p + x, y, flipud(im))
+                
+                min_val = min(Photos.RGB_calc{p}(:));
+                max_val = max(Photos.RGB_calc{p}(:));
+                
+                lbl_photo = {
+                                ['\bf' num2str(p) ': \rm' regexprep(Photos.filenames{p},'\_','\\_')]
+                                ['[' num2str(min_val) ' to ' num2str(max_val) ']']
+                            };
+                text(p, min(y), lbl_photo, 'HorizontalAlignment','center','VerticalAlignment','top','FontSize',10)
             end
-            set(gca,'XTick',1:Filters.qty)
+%             set(gca,'XTick',1:Filters.qty)
+            set(gca,'XTick',[])
             set(gca,'YTick',[])
             axis tight
             axis equal
             set(gca,'position',[0.025 0.025 0.95 0.95])
             title(['Photo Stack for ' regexprep(Photos.filename_first,'\_','\\_') ' and ' Filters.description])
         
+            %%
+            
+        figure(99)
+            set(gcf,'color','white')
+            clf
+            hold on
+            plot(Filters.stations, Photos.min_val, 'k-o')
+            plot(Filters.stations, Photos.max_val, 'k-o')
+            title('RGB Ranges of Photos in Stack')
+            xlabel('Filter Center Wavelength (CWL), nm')
+            ylabel('RGB Value Min and Max, ~')
+            grid on
+            grid minor
+
     end
 
     %%
@@ -1038,41 +1028,50 @@ function hyperspectral_image_GUI
         
         Filters.qty = size(trans,2);
         
-        % Determine mode based on filter set
-        i_lo = min(find(Filters.lambda >= min(Wavelength)));
-        i_hi = max(find(Filters.lambda <= max(Wavelength)));
-        T_sum = sum(trans(i_lo:i_hi,:),2); % sum of transmissions at each wavelength
-        frac_insen = length(find(T_sum < (0.10*max(T_sum)))) / length(T_sum); % fraction of wavelengths with low sensitivity
+        % Save raw input data
+        Filters.T_orig   = trans;
+        Filters.lam_orig = Filters.lambda;
         
-        if frac_insen > 0.5
-            Filters.mode = 'sparse';
-            Filters.CWL_rounding = 10; % nm
-            Filters.CWL = zeros(Filters.qty, 1);
-            for f = 1 : Filters.qty
-                [~, ind] = max(trans(:,f));
-                Filters.CWL(f) = round(Filters.lambda(ind)/Filters.CWL_rounding) * Filters.CWL_rounding;
-            end
+        % Determine and index the wavelength "stations" at which SPDs will be calculated
+        switch get(Select_Mode.handle, 'value')
             
-        else
-            Filters.mode = 'overlapping';
+            case 1 % Wide Basic
+                % The user would like to not idealize each filter, and
+                % allow them to overlap naturally. This is best for arbitrary
+                % or wide-bandpass filters, ~15+ nm FWHM.
+                min_sen = get(Minimum_Sensitivity.handle, 'string');
+                min_sen = str2double(min_sen);
+                Filters.stations = Filters.lambda(find(sum(trans,2) > min_sen));
+                Filters.stations = Filters.stations';
+                
+            case 2 % Narrow Idealized
+                % The user would like to idealize each filter as an ideal
+                % "spike", preventing overlap. This is best for narrow-
+                % bandpass filters, ~5-15 nm FWHM.
+                Filters.stations = zeros(Filters.qty,1);
+                CWL_rounding = get(CWL_Rounding.handle, 'string');
+                CWL_rounding = str2num(CWL_rounding);
+                for f = 1 : Filters.qty
+                    CWL = sum(Filters.lambda' .* trans(:,f)) / sum(trans(:,f)); % weighted average
+                    CWL = round(CWL / CWL_rounding) * CWL_rounding;
+                    Filters.stations(f) = CWL;
+                end
+                
+            otherwise
+                error('Unrecognized mode')
             
         end
+        [Filters.stations, Filters.ind_stations] = intersect(Wavelength, Filters.stations);
         
-        % Save raw data in case needed for sparse mode
-        Filters.lambda_raw = Filters.lambda;
-        Filters.T_raw = trans;
-        
-        % Derive properties
+        % Resample and derive properties
         Filters.T = zeros(length(Wavelength), Filters.qty);
         Filters.XYZ = nan(Filters.qty, 3);
         Filters.RGB = nan(Filters.qty, 3);
         for f = 1 : size(trans,2)
             Filters.T(:,f) = interp1(Filters.lambda, trans(:,f), Wavelength);
-            
             for cc = 1 : 3
                 Filters.XYZ(f,cc) = sum(Observer.sensitivity(:,cc) .* Filters.T(:,f));
             end
-            
         end
         Filters.XYZ = Filters.XYZ ./ max(Filters.XYZ(:)) .* 0.50;
         for f = 1 : Filters.qty
@@ -1184,7 +1183,7 @@ function hyperspectral_image_GUI
         
         % Data source: http://www.gujinwei.org/research/camspec/db.html
         
-        Camera.lambda = 400 : 10 : 720; % nm
+        Camera.lambda = 400 : 10 : 720; % nm, default
         i_cam = get(Select_Camera.handle, 'value');
         Camera.description = Select_Camera.vals{i_cam};
         
@@ -1358,8 +1357,19 @@ function hyperspectral_image_GUI
                     0.0087465 0.075143 0.10312 0.12927 0.14942 0.19179 0.24858 0.37672 0.45492 0.50906 0.67036 0.85874 0.93855 1 0.87676 0.85895 0.66097 0.54573 0.3987 0.29141 0.14386 0.086686 0.046569 0.032661 0.021849 0.016681 0.013952 0.012859 0.011204 0.0038035 0.00078707 0.00032949 0.00013348
                     0.033016 0.35254 0.49797 0.60149 0.65736 0.78336 0.73926 0.776 0.72276 0.61365 0.4557 0.30535 0.17946 0.12249 0.073361 0.04487 0.020265 0.012304 0.0085751 0.0064746 0.0032885 0.002511 0.0020362 0.0023356 0.0027482 0.0036074 0.0036988 0.0031634 0.0022407 0.00069044 0.00012112 6.3737e-05 4.2452e-05
                     ];
+            case 29 % Canon 650D Noon Sky 2021-01-09; calculate_camera_trichromate_sensitivity.m
+                    cam_sen = [
+                    0.003945213966877	0.00443471531036	0.036215617974705	0.14069	0.66211	0.69439	0.36280
+                    0.02156474114648	0.112424708525973	0.719061796107152	1.00000	0.88046	0.14288	0.04596
+                    0.201276608678309	0.570000880036217	0.470433285726194	0.12392	0.05707	0.01816	0.02063
+                    ];
+                    Camera.lambda = 420 : 40 : 660;
                 
         end
+        
+        % Save raw data
+        Camera.Sen_orig  = cam_sen';
+        Camera.lam_orig = Camera.lambda;
         
         % Standardize domain
         cam_sen = cam_sen';

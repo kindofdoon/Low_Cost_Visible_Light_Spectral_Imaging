@@ -234,21 +234,6 @@
         warning(['Maximum RGB value in photo stack (' num2str(Photo.max_val) ') indicates possible saturation'])
     end
     
-    %% Show photos
-    
-%     figure(2)
-%     clf
-%     set(gcf,'color','white')
-%     for p = 1 : Photo.qty
-%         subplot(1,Photo.qty,p)
-%         cla
-%         image(Photo.RGB_prev{p})
-%         axis tight
-%         axis equal
-%         axis off
-%         title(['\rm' regexprep(Photo.filename{p},'_','\\_')])
-%     end
-    
     %% Extract measured values from photos
     
     % Row:    wavelength

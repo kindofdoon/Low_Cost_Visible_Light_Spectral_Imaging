@@ -343,7 +343,7 @@ function hyperspectral_image_GUI
         set(Preview_Res.handle,             'string',  500)
         set(Export_Res.handle,              'string',  2000)
         set(Wavelength_Res.handle,          'value',   5)
-        set(CWL_Res.handle,            'string',  10)
+        set(CWL_Res.handle,                 'string',  10)
         set(Zero_Slope.handle,              'value',   0)
         set(Gain_R.handle,                  'string', '1.00')
         set(Gain_G.handle,                  'string', '1.00')

@@ -1,4 +1,4 @@
-function [I_raw, I_demosaic, I_preview] = extract_RAW_via_dcraw(path, filename, sensor_alignment, save_externally, calculate_preview, show_preview)
+function [I_raw, I_demosaic, I_preview] = extract_RAW_via_dcraw(path, filename, sensor_alignment, modifiers, save_externally, calculate_preview, show_preview)
 
     % Wrapper to extract RAW images using dcraw with minimal processing;    
     % intended usage is to extract camera sensor data rather than images
@@ -15,19 +15,18 @@ function [I_raw, I_demosaic, I_preview] = extract_RAW_via_dcraw(path, filename, 
         % path:             location of RAW file, e.g. 'C:\Users\jsmith\Desktop'
         % filename:         name of RAW file, e.g. 'CRW_1001.CRW'
         % sensor_alignment: Bayer filter pattern, one of one of: {'gbrg','grbg','bggr','rggb'}; see "demosaic" documentation for more
+        % modifiers:        string containing all desired modifiers; see below for list
         % save_externally:  set to 1 to leave the .PGM as created by dcraw; by default it is deleted after it is read
         % show_result:      set to 1 to show I_preview
         
     % Daniel W. Dichter 2020-11-02
     % daniel.w.dichter@gmail.com
     
-    %%
+    %% Provide dummy inputs
 
 %     clear
 %     clc
     
-    %% Provide dummy inputs
-
 %     path             = 'C:\Users\Daniel\Desktop\hyperspectral_imaging\photos';
 %     filename         = 'CRW_4524.CRW';
 %     sensor_alignment = 'rggb'; % one of: {'gbrg', 'grbg', 'bggr', 'rggb'}
@@ -75,7 +74,7 @@ function [I_raw, I_demosaic, I_preview] = extract_RAW_via_dcraw(path, filename, 
     
     %% Extract raw image
     
-    [status,cmdout] = system(['dcraw -v -D -4 ' path '\' filename]);
+    [status,cmdout] = system(['dcraw ' modifiers ' ' path '\' filename]);
     
     fn_temp = regexprep(filename, '\..+' ,'.pgm');
     I_raw = imread([path '\' fn_temp]);
@@ -84,7 +83,7 @@ function [I_raw, I_demosaic, I_preview] = extract_RAW_via_dcraw(path, filename, 
     if ~save_externally
         delete([path '\' fn_temp])
     end
-    
+        
     %% Calculate preview
     
     if ~calculate_preview
@@ -103,13 +102,25 @@ function [I_raw, I_demosaic, I_preview] = extract_RAW_via_dcraw(path, filename, 
     bin.PDF = bin.pop ./ sum(bin.pop);
     bin.CDF = cumsum(bin.PDF);
 
+    val_lim_active = [0 0];
     frac_sat_lo    = 0.01;
     frac_sat_hi    = 0.01;
     value_range(1) = 0.05;
     value_range(2) = 0.95;
-
-    bin.ind_active = intersect(find(bin.CDF>frac_sat_lo), find(bin.CDF<(1-frac_sat_hi)));
-    val_lim_active = [bin.edges(min(bin.ind_active)), bin.edges(max(bin.ind_active))] + bin.width/2;
+    
+    % Apply an iterative approach here. For most images, 1% saturation
+    % works fine, but for very low sensitivity, a smaller value may be
+    % needed extract a useful value range.
+    
+    while abs(diff(val_lim_active)) == 0
+    
+        bin.ind_active = intersect(find(bin.CDF>frac_sat_lo), find(bin.CDF<(1-frac_sat_hi)));
+        val_lim_active = [bin.edges(min(bin.ind_active)), bin.edges(max(bin.ind_active))] + bin.width/2;
+        
+        frac_sat_lo = frac_sat_lo / 10;
+        frac_sat_hi = frac_sat_hi / 10;
+        
+    end
 
     % Normalize values
     gamma = 1.0;
@@ -134,6 +145,7 @@ function [I_raw, I_demosaic, I_preview] = extract_RAW_via_dcraw(path, filename, 
         drawnow
 
 % end
+
 
 
 

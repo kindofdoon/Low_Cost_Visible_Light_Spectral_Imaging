@@ -16,7 +16,7 @@ function RGB = wavelength_vs_color(lambda)
     
     %%
     
-    addpath('C:\Users\Daniel\Desktop\PAINTERS_COPILOT\')
+    addpath('C:\Users\Admin\Desktop\PAINTERS_COPILOT\')
     [Observer, ~, ~] = prepare_studio(0);
     
     %%

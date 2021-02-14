@@ -29,9 +29,9 @@ function hyperspectral_image_GUI
                         [560 GUI.fig_size_basic(2)] % 5:  filter colors
                         [560 GUI.fig_size_basic(2)] % 6:  filter transmissions
                         GUI.fig_size_basic          % 7:  sensor sensitivity
-                        GUI.fig_size_basic          % 8:  sensor PCA
-                        GUI.fig_size_basic          % 9:  sensor calibration
-                        GUI.fig_size_basic .* [3 1] % 10: photo stack
+                        GUI.fig_size_basic          % 8:  sensor calibration
+                        GUI.fig_size_basic .* [3 1] % 9:  photo stack
+                        GUI.fig_size_basic .* [1 3] % 10: photo histograms
                         GUI.fig_size_basic          % 11: image
                         1000 420                    % 12: mesh & spectra
                     ];
@@ -47,7 +47,6 @@ function hyperspectral_image_GUI
     GUI.gap_small = GUI.gap_small + GUI.input_dims(2);
     GUI.gap_large = GUI.gap_large + GUI.input_dims(2);
     
-%     pca_explain_thresh = 0.99;
     
     %%
     
@@ -115,7 +114,7 @@ function hyperspectral_image_GUI
                             'Point Grey Grasshopper2 14S5C'
                             'Phase One'
                             'SONY NEX-5N'
-                            'Canon 650D Noon Sky 2021-01-09'
+                            'Canon 650D 2700 K Incandescent'
                          };
     uicontrol('Style','text', 'String','Camera: ', 'Position',[GUI.label_x, Select_Camera.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Select_Camera.handle = uicontrol('Style','popupmenu', 'String',Select_Camera.vals, 'Value',29, 'Position',Select_Camera.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
@@ -379,30 +378,6 @@ function hyperspectral_image_GUI
             title({'Overall Sensitivity of Camera/Filter Sensor',['\rm\fontsize{9}' Camera.description ', ' Filters.description]})
             
         figure(8)
-            set(gcf,'Name','Sensor PCA','NumberTitle','off','MenuBar','none','ToolBar','none')
-            clf
-%             hold on
-%             set(gcf,'color','white')
-%             
-% %             switch Filters.mode
-% %                 case 'overlapping'
-%                     cse = cumsum(explained);
-%                     ind = min(find(cse > pca_explain_thresh));
-%                     plot([ind ind], [0 1], 'r')
-%                     plot(1:length(explained), cse, 'k-o')
-%                     text(ind, 0.5, {[' ' num2str(ind) ' PC explain'], [' \geq ' num2str(round(pca_explain_thresh*100)) '% of variance']},'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',9)
-%                     axis([1 10 0 1])
-%                     set(gca,'xtick',[1:max(xlim)])
-%                     grid on
-%                     grid minor
-%                     xlabel('Principal Component (PC) Index')
-%                     ylabel('Cumulative Sum, Variance Explained')
-%                     title({'Sensor Principal Component Analysis (PCA)',['\rm\fontsize{8}' Camera.description ', ' Filters.description]})
-% %                 case 'sparse'
-% %                     % Do nothing
-% %             end
-            
-        figure(9)
             set(gcf,'Name','Sensor Calibration Curve','NumberTitle','off','MenuBar','none','ToolBar','none')
             clf
             set(gcf,'color','white')
@@ -639,6 +614,11 @@ function hyperspectral_image_GUI
                     ST = S * T;
                     ST = repmat(ST, [size(SPD,1),size(SPD,2)]);
                     RGB = Photos.RGB{w};
+                    
+                    %%%
+                    RGB = double(RGB) ./ Filters.stations(w)^3;
+                    %%%
+                    
                     SPD(:,:,w) = sum(RGB,3) ./ (ST);
                 end
                 
@@ -667,6 +647,10 @@ function hyperspectral_image_GUI
             SPD = interp3(X, Y, W, SPD, Xq, Yq, Wq, 'spline');
         end
         close(h)
+        
+        %%% Experimental gamma curve
+%         SPD = SPD .^ 0.5;
+        %%%
 
         % Normalize
         SPD = SPD ./ max(SPD(:));
@@ -749,6 +733,12 @@ function hyperspectral_image_GUI
         margin_top = size(Image.RGB,1)-max(Y(:));
         X = X - round((margin_left-margin_right)/2);
         Y = Y - round((margin_bottom-margin_top)/2);
+        
+        
+%         %%% One spot right in the center - for debug purposes
+%         X = round(Photos.res(2)/2);
+%         Y = round(Photos.res(1)/2);
+%         %%%
 
         figure(12)
             set(gcf,'Name','Image, Mesh, Spectra, and Colors','NumberTitle','off','MenuBar','none','ToolBar','none')
@@ -888,6 +878,7 @@ function hyperspectral_image_GUI
             Photos.RGB_calc{p} = RGB_calc;
             Photos.min_val(p)  = min(RGB_calc(:));
             Photos.max_val(p)  = max(RGB_calc(:));
+            Photos.mean_val(p) = mean(RGB_calc(:));
 
         end
 
@@ -895,7 +886,7 @@ function hyperspectral_image_GUI
         
         Photos.AR = Photos.res_orig(2) / Photos.res_orig(1); % aspect ratio
         
-        figure(10)
+        figure(9)
             set(gcf,'Name','Photo Stack','NumberTitle','off','MenuBar','none','ToolBar','none')
             scale = 0.95;
             x = ((1:Photos.res_orig(2)) ./ Photos.res_orig(2) - 1/2) .* scale;
@@ -908,12 +899,9 @@ function hyperspectral_image_GUI
                 im = imresize(Photos.RGB_preview{p}, preview_res/max(Photos.res_orig));
                 image(p + x, y, flipud(im))
                 
-                min_val = min(Photos.RGB_calc{p}(:));
-                max_val = max(Photos.RGB_calc{p}(:));
-                
                 lbl_photo = {
                                 ['\bf' num2str(p) ': \rm' regexprep(Photos.filenames{p},'\_','\\_')]
-                                ['[' num2str(min_val) ' to ' num2str(max_val) ']']
+                                ['[' num2str(Photos.min_val(p)) ' to ' num2str(Photos.max_val(p)) ']']
                             };
                 text(p, min(y), lbl_photo, 'HorizontalAlignment','center','VerticalAlignment','top','FontSize',10)
             end
@@ -927,17 +915,53 @@ function hyperspectral_image_GUI
         
             %%
             
-        figure(99)
+        figure(10)
             set(gcf,'color','white')
-            clf
-            hold on
-            plot(Filters.stations, Photos.min_val, 'k-o')
-            plot(Filters.stations, Photos.max_val, 'k-o')
-            title('RGB Ranges of Photos in Stack')
-            xlabel('Filter Center Wavelength (CWL), nm')
-            ylabel('RGB Value Min and Max, ~')
-            grid on
-            grid minor
+            set(gcf,'Name','Photo Histograms','NumberTitle','off','MenuBar','none','ToolBar','none')
+            
+            % Find largest value to establish a common set of histograms
+            % bins and unify x-axis scaling
+            max_val = 0;
+            for p = 1 : Photos.qty
+                max_val = max([max_val, max(Photos.RGB_calc{p}(:))]);
+            end
+            edges   = linspace(0, double(max_val), 256);
+            centers = edges(1:(end-1)) + (edges(2)-edges(1))/2;
+            
+            for p = 1 : Photos.qty
+                subplot(Photos.qty, 1, p)
+                    cla
+                    hold on
+                
+                for cc = 1 : 3
+                    
+                    counts = histcounts(Photos.RGB_calc{p}(:,:,cc), edges);
+                    switch cc
+                        case 1
+                            col = 'r';
+                        case 2
+                            col = 'g';
+                        case 3
+                            col = 'b';
+                    end
+                    plot(centers, counts, 'Color', col)
+                    
+                end
+                
+                xlim([0 max_val])
+                
+                title([num2str(p) ': \rm' regexprep(Photos.filenames{p},'_','\\_')])
+                ylabel('Qty. Px.')
+                grid on
+                grid minor
+%                 set(gca, 'xscale', 'log')
+                set(gca, 'yscale', 'log')
+                
+                if p == Photos.qty
+                    xlabel('RGB Value, ~')
+                end
+                
+            end
 
     end
 
@@ -1357,12 +1381,10 @@ function hyperspectral_image_GUI
                     0.0087465 0.075143 0.10312 0.12927 0.14942 0.19179 0.24858 0.37672 0.45492 0.50906 0.67036 0.85874 0.93855 1 0.87676 0.85895 0.66097 0.54573 0.3987 0.29141 0.14386 0.086686 0.046569 0.032661 0.021849 0.016681 0.013952 0.012859 0.011204 0.0038035 0.00078707 0.00032949 0.00013348
                     0.033016 0.35254 0.49797 0.60149 0.65736 0.78336 0.73926 0.776 0.72276 0.61365 0.4557 0.30535 0.17946 0.12249 0.073361 0.04487 0.020265 0.012304 0.0085751 0.0064746 0.0032885 0.002511 0.0020362 0.0023356 0.0027482 0.0036074 0.0036988 0.0031634 0.0022407 0.00069044 0.00012112 6.3737e-05 4.2452e-05
                     ];
-            case 29 % Canon 650D Noon Sky 2021-01-09; calculate_camera_trichromate_sensitivity.m
-                    cam_sen = [
-                    0.003945213966877	0.00443471531036	0.036215617974705	0.14069	0.66211	0.69439	0.36280
-                    0.02156474114648	0.112424708525973	0.719061796107152	1.00000	0.88046	0.14288	0.04596
-                    0.201276608678309	0.570000880036217	0.470433285726194	0.12392	0.05707	0.01816	0.02063
-                    ];
+            case 29 % Canon 650D
+                
+                    cam_sen = [0.173399304487555,0.303698099210867,2.21790490456186;0.102750870839229,0.727639341133992,3.72298587364416;0.237254159783574,4.07971154238881,2.75991307355139;0.747127233956319,5.32634999381013,0.690214923374762;2.99497691481399,4.06590277640314,0.301854901079775;2.56004291122510,0.544779830103635,0.130197162019287;1.02918405854270,0.153574454638870,0.105674674753442]';
+
                     Camera.lambda = 420 : 40 : 660;
                 
         end

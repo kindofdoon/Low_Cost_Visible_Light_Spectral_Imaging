@@ -40,14 +40,15 @@ function hyperspectral_image_GUI
                         [560 GUI.fig_size_basic(2)] % 4:  filter colors
                         [560 GUI.fig_size_basic(2)] % 5:  filter transmissions
                         GUI.fig_size_basic          % 6:  sensor calibration
-                        GUI.fig_size_basic .* [1 3] % 7:  photo histograms
+                        GUI.fig_size_basic(1) 900   % 7:  photo histograms
                         GUI.fig_size_basic          % 8:  image
                         1000 420                    % 9:  mesh & spectra
                     ];
     
     %% Constants
     
-    lambda_lims = [400, 700]; %[420,660] % nm, wavelength limits
+%     lambda_lims = [400, 700]; % nm, wavelength limits
+    lambda_lims = [420, 660]; % nm, wavelength limits
     Photo.RAW_black_level = 2048; % the level corresponding to pure black, i.e. zero count
     
     %% GUI Setup
@@ -139,7 +140,7 @@ function hyperspectral_image_GUI
     Export_Res.handle = uicontrol('Style','edit', 'String','2000', 'Position',Export_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Wavelength_Res.pos = [GUI.input_x, Export_Res.pos(2)-GUI.gap_small, GUI.input_dims];
-    Wavelength_Res.vals = {'1','2','5','10','20','25','50','100'};
+    Wavelength_Res.vals = {'1','2','5','10','20'};
     uicontrol('Style','text', 'String','Wavelength Res, nm', 'Position',[GUI.label_x, Wavelength_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Wavelength_Res.handle = uicontrol('Style','popupmenu', 'String',Wavelength_Res.vals, 'Value',5, 'Position',Wavelength_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Wavelength_Res.handle,'Callback',@(hObject,eventdata) update_wavelength)
@@ -394,112 +395,22 @@ function hyperspectral_image_GUI
         for f = 2 : length(fig_handles)
             
             figure(f)
-            set(gcf,'position',[xy GUI.fig_sizes(f,:)]);
+            
+            switch f
+                case 7
+                    offset = [0 -455];
+                otherwise
+                    offset = [0 0];
+            end
+            
+            set(gcf,'position',[xy+offset GUI.fig_sizes(f,:)]);
             xy = xy + dp;
             
         end
         
     end
 
-    %% Image preview & export
-    
-    function generate_GIF
-        
-        if ~isfield(Photo, 'RGB_calc')
-            warning('No photos loaded, cannot generate GIF')
-            return
-        end
-        if isempty(SPD)
-            warning('No image created, cannot generate GIF')
-            return
-        end
-        
-        lambda_vs_RGB = wavelength_vs_color(Wavelength); % get wavelength vs. color data
-        
-        % GIF parameters
-        fig_width    = 500; % px
-        fs           = 10; % font size
-        GIF_duration = str2double(get(GIF_Duration.handle, 'string')); % sec
-        GIF_fps      = length(Wavelength) / GIF_duration;
-        
-        timestamp = datestr(datetime('now'));
-        timestamp = regexprep(timestamp,':','-');
-        timestamp = regexprep(timestamp,' ','_');
-        
-        fn_GIF = regexprep(Photo.filename_first, '\..+',''); % strip off file extension
-        fn_GIF = [fn_GIF '_' timestamp '.GIF'];
-        
-        figure(100) % temporary figure
-            clf
-            set(gcf,'color','white')
-            pos = get(gcf,'position');
-            aspect_ratio = size(SPD,2) / size(SPD,1); % width/rect.height
-            set(gcf,'position',[pos(1:2), fig_width.*[aspect_ratio, 1]])
-            set(gca,'position',[0.05 0.05 0.89 0.90])
-
-        for f = 1 : size(SPD,3) % for each wavelength
-
-            % Show wavelength slice
-            cla
-            hold on
-            pcolor(flipud(SPD(:,:,f)))
-            shading flat
-            axis equal
-            axis tight
-            axis off
-            colormap gray
-            caxis([min(SPD(:)), max(SPD(:))])
-            h = colorbar;
-            set(get(h,'label'),'string','Spectral Power Distribution, Dimensionless');
-            set(h,'FontSize',fs)
-            title(['Wavelength: ' num2str(Wavelength(f)) ' ± ' num2str(abs(diff(Wavelength(1:2)))/2) ' nm'])
-
-            % Show wavelength color
-            rect.width = size(SPD,2) / length(Observer.lambda); % px/nm
-            rect.height = 25; % px
-            rect.y_gap = 10; % px
-            rect.x = [1 1 -1 -1] .* rect.width/2;
-            rect.y = [1 0 0 1] .* rect.height - rect.height - rect.y_gap;
-            
-            
-            target_lbl_qty = 10;
-            delta = 1;
-            while length(1:delta:length(Wavelength)) > target_lbl_qty
-                delta = delta + 1;
-            end
-            ind_show_lbl = 1 : delta : length(Wavelength);
-            
-            for w = 1 : size(lambda_vs_RGB, 1)
-                center = (Wavelength(w)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
-                center = center * (size(SPD,2)-rect.width) + rect.width/2;
-                fill(rect.x + center, rect.y, lambda_vs_RGB(w,:), 'EdgeColor','none')
-                if ismember(w, ind_show_lbl)
-                    text(center, min(rect.y), [num2str(Wavelength(w)) ' nm'], 'HorizontalAlignment','center','VerticalAlignment','top','FontSize',fs)
-                end
-            end
-
-            % Outline the current wavelength band
-            center = (Wavelength(f)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
-            center = center * (size(SPD,2)-rect.width) + rect.width/2;
-            plot([rect.x, rect.x(1)] + center, [rect.y, rect.y(1)], 'k', 'LineWidth', 2)
-
-            drawnow
-
-            % Capture the frame
-            frame = getframe(gcf); 
-            im = frame2im(frame); 
-            [imind,cm] = rgb2ind(im,256);
-            if f == 1
-                imwrite(imind,cm, [Photo.pathdir '\' fn_GIF],'gif', 'Loopcount',inf,'DelayTime',1/GIF_fps);
-            else 
-                imwrite(imind,cm, [Photo.pathdir '\' fn_GIF],'gif','WriteMode','append','DelayTime',1/GIF_fps); 
-            end
-
-        end
-        
-        close(figure(100))
-        
-    end
+    %% Image settings
 
     function preview_image
         if ~isfield(Photo, 'RGB_calc')
@@ -520,6 +431,8 @@ function hyperspectral_image_GUI
         Photo.scale = str2double(get(Export_Res.handle,'string')) / max(Photo.res_orig);
         generate_image
     end
+
+    %% Image generation
 
     function generate_image
 
@@ -573,6 +486,10 @@ function hyperspectral_image_GUI
         i_interp = intersect(find(Wavelength>=min(Filter.stations)), find(Wavelength<=max(Filter.stations)));
         i_extrap = setdiff(1:length(Wavelength), i_interp);
         
+        
+        
+        
+        
         % Interpolate within domain
         [X,  Y,  W]  = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(Filter.ind_stations));
         [Xq, Yq, Wq] = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(i_interp));
@@ -587,8 +504,8 @@ function hyperspectral_image_GUI
             SPD_(:,:,1:i_mid)       = repmat(SPD(:,:,1),   [1,1,length(1:i_mid)]);
             SPD_(:,:,(i_mid+1):qty_lam_report) = repmat(SPD(:,:,end), [1,1,length((i_mid+1):qty_lam_report)]);
             SPD_(:,:,i_interp) = SPD;
+            SPD = SPD_;
         end
-        SPD = SPD_;
         
         close(h)
 
@@ -743,6 +660,119 @@ function hyperspectral_image_GUI
 
     end
 
+    %% GIF Export
+
+    function generate_GIF
+        
+        if ~isfield(Photo, 'RGB_calc')
+            warning('No photos loaded, cannot generate GIF')
+            return
+        end
+        if isempty(SPD)
+            warning('No image created, cannot generate GIF')
+            return
+        end
+        
+        lambda_vs_RGB = wavelength_vs_color(Wavelength); % get wavelength vs. color data
+        
+        % GIF parameters
+        fig_width    = 500; % px
+        fs           = 10; % font size
+        GIF_duration = str2double(get(GIF_Duration.handle, 'string')); % sec
+        GIF_fps      = length(Wavelength) / GIF_duration;
+        
+        timestamp = datestr(datetime('now'));
+        timestamp = regexprep(timestamp,':','-');
+        timestamp = regexprep(timestamp,' ','_');
+        
+        fn_GIF = regexprep(Photo.filename_first, '\..+',''); % strip off file extension
+        fn_GIF = [fn_GIF '_' timestamp '.GIF'];
+        
+        % Set value scale using CDF
+        thresh     = 0.95;
+        bin.qty    = 1000;
+        bin.edge   = linspace(0,max(SPD(:)),bin.qty);
+        bin.count  = histcounts(SPD(:));
+        bin.width  = abs(diff(bin.edge(1:2)));
+        bin.center = bin.edge(1:(end-1)) + bin.width/2;
+        bin.count  = bin.count ./ sum(bin.count);
+        bin.CDF    = cumsum(bin.count);
+        [val, ~]   = min(find(bin.CDF > thresh));
+        val_upr    = bin.center(val);
+        
+        figure(100) % temporary figure
+            clf
+            set(gcf,'color','white')
+            pos = get(gcf,'position');
+            aspect_ratio = size(SPD,2) / size(SPD,1); % width/height
+            set(gcf,'position',[pos(1), 150, fig_width.*[aspect_ratio, 1]])
+            set(gca,'position',[0.05 0.05 0.89 0.90])
+
+        for f = 1 : size(SPD,3) % for each wavelength
+
+            % Show wavelength slice
+            cla
+            hold on
+            pcolor(flipud(SPD(:,:,f)))
+            shading flat
+            axis equal
+            axis tight
+            axis off
+            colormap gray
+            
+            caxis([0, val_upr])
+            h = colorbar;
+            set(get(h,'label'),'string','Spectral Power Distribution, ~');
+            set(h,'FontSize',fs)
+            title(['Wavelength: ' num2str(Wavelength(f)) ' ± ' num2str(abs(diff(Wavelength(1:2)))/2) ' nm'])
+
+            % Show wavelength color
+            rect.width = size(SPD,2) / length(Observer.lambda); % px/nm
+            rect.height = 25; % px
+            rect.y_gap = 10; % px
+            rect.x = [1 1 -1 -1] .* rect.width/2;
+            rect.y = [1 0 0 1] .* rect.height - rect.height - rect.y_gap;
+            
+            
+            target_lbl_qty = 10;
+            delta = 1;
+            while length(1:delta:length(Wavelength)) > target_lbl_qty
+                delta = delta + 1;
+            end
+            ind_show_lbl = 1 : delta : length(Wavelength);
+            
+            for w = 1 : size(lambda_vs_RGB, 1)
+                center = (Wavelength(w)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
+                center = center * (size(SPD,2)-rect.width) + rect.width/2;
+                fill(rect.x + center, rect.y, lambda_vs_RGB(w,:), 'EdgeColor','none')
+                if ismember(w, ind_show_lbl)
+                    text(center, min(rect.y), [num2str(Wavelength(w)) ' nm'], 'HorizontalAlignment','center','VerticalAlignment','top','FontSize',fs)
+                end
+            end
+
+            % Outline the current wavelength band
+            center = (Wavelength(f)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
+            center = center * (size(SPD,2)-rect.width) + rect.width/2;
+            plot([rect.x, rect.x(1)] + center, [rect.y, rect.y(1)], 'k', 'LineWidth', 2)
+
+            drawnow
+
+            % Capture the frame
+            frame = getframe(gcf); 
+            im = frame2im(frame); 
+            [imind,cm] = rgb2ind(im,256);
+            if f == 1
+                imwrite(imind,cm, [Photo.pathdir '\' fn_GIF],'gif', 'Loopcount',inf,'DelayTime',1/GIF_fps);
+            else 
+                imwrite(imind,cm, [Photo.pathdir '\' fn_GIF],'gif','WriteMode','append','DelayTime',1/GIF_fps); 
+            end
+
+        end
+        
+        close(figure(100))
+        
+    end
+
     %%
 
     function load_photos
@@ -791,6 +821,7 @@ function hyperspectral_image_GUI
         close(h)
                     
         figure(7)
+            clf
             set(gcf,'color','white')
             set(gcf,'Name','Photo Histograms','NumberTitle','off','MenuBar','none','ToolBar','none')
             
@@ -816,18 +847,18 @@ function hyperspectral_image_GUI
                 end
                 
                 xlim([0 max_val])
-                
-                title([num2str(p) ': \rm' regexprep(Photo.filenames{p},'_','\\_')])
-                ylabel('Qty. Px.')
+                title(['\fontsize{9}\bf' num2str(p) ': \rm' regexprep(Photo.filenames{p},'_','\\_')])
                 grid on
                 grid minor
                 set(gca, 'yscale', 'log')
-                
-                if p == Photo.qty
-                    xlabel('RGB Value, ~')
+                if p ~= Photo.qty
+                    set(gca,'xticklabel','')
+                    set(gca,'yticklabel','')
                 end
                 
             end
+            
+        reset_figures
 
     end
 
@@ -1234,8 +1265,15 @@ function hyperspectral_image_GUI
                 
         end
         
+        % Query gains
+        Camera.RGB_gains = [
+                                str2double(get(Gain_R.handle, 'string'))
+                                str2double(get(Gain_G.handle, 'string'))
+                                str2double(get(Gain_B.handle, 'string'))
+                           ]';
+        
         % Save raw data
-        Camera.Sen_orig  = cam_sen';
+        Camera.Sen_orig = cam_sen';
         Camera.lam_orig = Camera.lambda;
         
         % Standardize domain
@@ -1246,13 +1284,9 @@ function hyperspectral_image_GUI
         end
         Camera.lambda = Wavelength;
         
-        % Query and apply gains
-        Camera.RGB_gains = [
-                            str2double(get(Gain_R.handle, 'string'))
-                            str2double(get(Gain_G.handle, 'string'))
-                            str2double(get(Gain_B.handle, 'string'))
-                       ]';
-        Camera.sensitivity = Camera.sensitivity .* repmat(Camera.RGB_gains, [length(Wavelength), 1]);
+        % Apply gains
+        Camera.sensitivity = Camera.sensitivity .* repmat(Camera.RGB_gains, [length(Wavelength),      1]);
+        Camera.Sen_orig    = Camera.Sen_orig    .* repmat(Camera.RGB_gains, [length(Camera.lam_orig), 1]);
         
         update_sensor
         

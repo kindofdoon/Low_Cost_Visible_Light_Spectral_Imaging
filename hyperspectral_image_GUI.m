@@ -480,15 +480,10 @@ function hyperspectral_image_GUI
         CALIB = repmat(CALIB, [Photo.res,1]);
         SPD   = SPD .* CALIB;
         
-        % Interpolate and extrapolate
+        % Set indices for interpolation vs. extrapolation
         h = waitbar(0,'Interpolating and extrapolating datacube...');
-        
         i_interp = intersect(find(Wavelength>=min(Filter.stations)), find(Wavelength<=max(Filter.stations)));
         i_extrap = setdiff(1:length(Wavelength), i_interp);
-        
-        
-        
-        
         
         % Interpolate within domain
         [X,  Y,  W]  = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(Filter.ind_stations));
@@ -499,11 +494,13 @@ function hyperspectral_image_GUI
         
         % Extrapolate beyond domain
         if ~isempty(i_extrap)
+            % Hold closest defined value as constant, rather than linear or
+            % spline extrapolation, which is not well-defined.
             SPD_ = zeros(Photo.res(1), Photo.res(2), qty_lam_report);
             i_mid = round(qty_lam_report/2);
             SPD_(:,:,1:i_mid)       = repmat(SPD(:,:,1),   [1,1,length(1:i_mid)]);
             SPD_(:,:,(i_mid+1):qty_lam_report) = repmat(SPD(:,:,end), [1,1,length((i_mid+1):qty_lam_report)]);
-            SPD_(:,:,i_interp) = SPD;
+            SPD_(:,:,i_interp) = SPD; % paste interpolated data in correct place
             SPD = SPD_;
         end
         
@@ -545,25 +542,22 @@ function hyperspectral_image_GUI
         Image.RGB(Image.RGB > 1) = 1;
 
         % Calculate CDF to determine which portion of value range is actually in use
-        I_Gray = rgb2gray(Image.RGB);
-        bin.edges = linspace(0, 1, 256);
-        bin.width = abs(diff(bin.edges(1:2)));
-        [bin.pop, ~, bin.ID] = histcounts(I_Gray, bin.edges);
-        bin.PDF = bin.pop ./ sum(bin.pop);
-        bin.CDF = cumsum(bin.PDF);
-        
-        frac_sat_lo    = str2double(get(Fraction_Saturated_Low.handle, 'string'));
-        frac_sat_hi    = str2double(get(Fraction_Saturated_High.handle,'string'));
-        value_range(1) = str2double(get(Value_Low.handle,              'string'));
-        value_range(2) = str2double(get(Value_High.handle,             'string'));
-        
-        bin.ind_active = intersect(find(bin.CDF>frac_sat_lo), find(bin.CDF<(1-frac_sat_hi)));
-        val_lim_active = [bin.edges(min(bin.ind_active)), bin.edges(max(bin.ind_active))] + bin.width/2;
+        I_Gray             = rgb2gray(Image.RGB);
+        bin.edges          = linspace(0, 1, 256);
+        bin.width          = abs(diff(bin.edges(1:2)));
+        [bin.pop,~,bin.ID] = histcounts(I_Gray, bin.edges);
+        bin.PDF            = bin.pop ./ sum(bin.pop);
+        bin.CDF            = cumsum(bin.PDF);
+        frac_sat_lo        = str2double(get(Fraction_Saturated_Low.handle, 'string'));
+        frac_sat_hi        = str2double(get(Fraction_Saturated_High.handle,'string'));
+        value_range(1)     = str2double(get(Value_Low.handle,              'string'));
+        value_range(2)     = str2double(get(Value_High.handle,             'string'));
+        bin.ind_active     = intersect(find(bin.CDF>frac_sat_lo), find(bin.CDF<(1-frac_sat_hi)));
+        val_lim_active     = [bin.edges(min(bin.ind_active)), bin.edges(max(bin.ind_active))] + bin.width/2;
 
         % Normalize values
         gamma = str2double(get(Gamma.handle, 'string'));
         Image.RGB = imadjust(Image.RGB, val_lim_active, value_range, gamma);
-
         Image.RGB(Image.RGB < 0) = 0;
         Image.RGB(Image.RGB > 1) = 1;
         
@@ -584,12 +578,12 @@ function hyperspectral_image_GUI
         [X, Y]   = meshgrid(x, y);
 
         % Center X and Y
-        margin_left = min(X(:));
-        margin_right = size(Image.RGB,2)-max(X(:));
+        margin_left   = min(X(:));
+        margin_right  = size(Image.RGB,2)-max(X(:));
         margin_bottom = min(Y(:));
-        margin_top = size(Image.RGB,1)-max(Y(:));
-        X = X - round((margin_left-margin_right)/2);
-        Y = Y - round((margin_bottom-margin_top)/2);
+        margin_top    = size(Image.RGB,1)-max(Y(:));
+        X             = X - round((margin_left-margin_right)/2);
+        Y             = Y - round((margin_bottom-margin_top)/2);
 
         figure(9)
             set(gcf,'Name','Image, Mesh, Spectra, and Colors','NumberTitle','off','MenuBar','none','ToolBar','none')

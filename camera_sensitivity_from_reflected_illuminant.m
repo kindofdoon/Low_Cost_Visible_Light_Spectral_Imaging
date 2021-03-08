@@ -18,21 +18,46 @@
     
     %% User inputs
 
-    Swatch.window = 200; % px, use just this centered window to extract a 0D value from each photo
-    Swatch.dim    = [4 6]; % [rows, cols] of swatches
-    Swatch.orig_x = 1770; % px
-    Swatch.orig_y = 1245; % px
-    Swatch.dp     = 352; % px
+    Photo.pathdir          = 'C:\Users\Admin\Desktop\hyperspectral_imaging\spectral_sensitivity\data_photos';
+    Swatch.dim             = [4 6]; % [rows, cols] of swatches
+    Illuminant.description = 'D65'; % scene illuminant
+    Wavelength             = 400 : 1 : 700; % nm, standard wavelength domain
+    CWL_rounding           = 5; % nm
+    Photo.RAW_black_level  = 2048; % the level corresponding to pure black, i.e. zero count
+
+    Photo.filename_first   = 'IMG_3934.CR2'; % sun off to side
+    Swatch.orig_x          = 1635;
+    Swatch.orig_y          = 1090;
+    Swatch.dp              = 410;
+    Swatch.window          = 250;
+
+%     Photo.filename_first   = 'IMG_3942.CR2'; % sun behind 01
+%     Swatch.orig_x          = 1635;
+%     Swatch.orig_y          = 1130;
+%     Swatch.dp              = 405;
+%     Swatch.window          = 250;
     
-    Illuminant.description = 'D65'; % illuminant being imaged
+%     Photo.filename_first   = 'IMG_3949.CR2'; % sun behind 02
+%     Swatch.orig_x          = 1635;
+%     Swatch.orig_y          = 1130;
+%     Swatch.dp              = 405;
+%     Swatch.window          = 250;
     
-    Wavelength = 400 : 1 : 700; % nm, standard wavelength domain
+    %%% Obsoleted
     
-    CWL_rounding = 5; % nm
-    Photo.RAW_black_level = 2048; % the level corresponding to pure black, i.e. zero count
+%     Photo.filename_first = 'IMG_3900.CR2';
+%     Swatch.orig_x = 1550;
+%     Swatch.orig_y = 1150;
+%     Swatch.dp     = 445;
+%     Swatch.window = 250;
     
-    Photo.filename_first = 'IMG_3846.CR2';
-    Photo.pathdir = 'C:\Users\Admin\Desktop\hyperspectral_imaging\spectral_sensitivity\data_photos';
+%     Photo.filename_first = 'IMG_3846.CR2';
+%     Swatch.orig_x = 1770;
+%     Swatch.orig_y = 1245;
+%     Swatch.dp     = 352;
+%     Swatch.window = 200;
+    
+    %%%
     
     %% Swatch reflectance data
     

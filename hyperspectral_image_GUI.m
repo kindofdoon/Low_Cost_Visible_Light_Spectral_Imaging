@@ -29,7 +29,7 @@ function hyperspectral_image_GUI
     GUI.col_hi         = [180 255 180]./255; % highlight color
     GUI.fs             = 10; % fontsize
     GUI.gap_small      = 1; % px
-    GUI.gap_large      = 20; % px
+    GUI.gap_large      = 16; % px
     GUI.label_off_vert = 4; % px, label offset, vertical
     
     % Default sizes for all figures
@@ -163,7 +163,12 @@ function hyperspectral_image_GUI
 
     %% Camera gains
     
-    Zero_Slope_Toggle.pos = [GUI.input_x, Select_Illuminant.pos(2)-GUI.gap_large, GUI.input_dims];
+    Interpolation_Method.pos = [GUI.input_x, Select_Illuminant.pos(2)-GUI.gap_large, GUI.input_dims];
+    Interpolation_Method.vals = {'linear','spline','cubic'};
+    uicontrol('Style','text', 'String','Interpolation Method', 'Position',[GUI.label_x, Interpolation_Method.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    Interpolation_Method.handle = uicontrol('Style','popupmenu', 'String',Interpolation_Method.vals, 'Value',3, 'Position',Interpolation_Method.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    
+    Zero_Slope_Toggle.pos = [GUI.input_x, Interpolation_Method.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Zero Slope Toggle', 'Position',[GUI.label_x, Zero_Slope_Toggle.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Zero_Slope_Toggle.handle = uicontrol('Style','checkbox', 'Value', 0, 'String','', 'Position',Zero_Slope_Toggle.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
@@ -492,6 +497,36 @@ function hyperspectral_image_GUI
             SPD_     = SPD ./ SPD_mean;
             SPD = (1-zero_slope_fraction).*SPD./max(SPD(:)) + zero_slope_fraction.*SPD_./max(SPD_(:));
         end
+        
+        %%% START EXPERIMENT - adjust values to cover multiple orders of magnitude
+        filter_stations = Wavelength(Filter.ind_stations);
+        y_bar = interp1(Observer.lambda, Observer.sensitivity(:,2), filter_stations);
+        y_bar = reshape(y_bar, [1,1,length(y_bar)]);
+        y_bar = repmat(y_bar, [Photo.res,1]);
+        Brightness = sum(y_bar .* SPD, 3);
+        
+%         base = 10;
+%         Adjustment = (log10(Brightness)./log10(base)) ./ Brightness;
+
+        Adjustment = (Brightness.^0.5) ./ Brightness; % Stevens' Power Law
+
+        Adjustment = repmat(Adjustment, [1,1,Filter.qty]);
+        SPD = SPD .* Adjustment;
+        
+%         figure(999)
+%             clf
+%             set(gcf,'color','white')
+%             pcolor(Brightness .* Adjustment(:,:,1))
+%             set(gca,'YDir','reverse')
+%             shading flat
+%             colormap gray
+%             axis tight
+%             axis equal
+%         figure(998)
+%             clf
+%             set(gcf,'color','white')
+%             hist(Brightness(:), 100)
+        %%% END EXPERIMENT
 
         % Apply calibration
         CALIB = reshape(Sensor.calibration_gain(Filter.ind_stations), [1,1,qty_lam_calc]);
@@ -507,7 +542,17 @@ function hyperspectral_image_GUI
         [X,  Y,  W]  = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(Filter.ind_stations));
         [Xq, Yq, Wq] = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(i_interp));
         if ~isequal(W, Wq)
-            SPD = interp3(X, Y, W, SPD, Xq, Yq, Wq, 'spline');
+            switch get(Interpolation_Method.handle, 'value')
+                case 1; 
+                    interp_method = 'linear';
+                case 2
+                    interp_method = 'spline';
+                case 3
+                    interp_method = 'cubic';
+                otherwise
+                    error('Invalid interpolation method')
+            end
+            SPD = interp3(X, Y, W, SPD, Xq, Yq, Wq, interp_method);
         end
         
         % Extrapolate beyond filter domain

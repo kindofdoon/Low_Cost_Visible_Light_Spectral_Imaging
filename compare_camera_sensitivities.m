@@ -30,34 +30,50 @@
                     0.0027522, 0.0063568, 0.025923, 0.055392, 0.079072, 0.098383, 0.13411, 0.28424, 0.53216, 0.67504, 0.78346, 0.91032, 0.89359, 1, 0.88185, 0.85526, 0.76181, 0.71016, 0.56299, 0.44008, 0.27856, 0.16213, 0.078769, 0.052859, 0.035122, 0.026057, 0.018983, 0.01922, 0.014806, 0.005949, 0.0013347, 0.00034954, 0.00012156
                     0.010963, 0.047664, 0.25927, 0.6278, 0.69721, 0.78211, 0.8035, 0.78122, 0.75824, 0.64609, 0.513, 0.38666, 0.22351, 0.15669, 0.10477, 0.078029, 0.050767, 0.040953, 0.034064, 0.027857, 0.019411, 0.013821, 0.0088981, 0.0081423, 0.007593, 0.0084223, 0.008274, 0.0083911, 0.0053867, 0.0018156, 0.00036101, 0.00011979, 7.6506e-05
                  ];
+          
+    % My result
+    cam_sen = [0.178525729228059,0.405687900126870,3.36907017364891;0.102162511237516,1.07622609950679,5.66390623359153;0.311844604160245,5.88218409372673,3.99770917904859;0.898880600040924,6.54077104371662,0.839672292951929;3.31833774006430,4.60404808832044,0.319526731989420;2.90950886352070,0.616163664086441,0.121384349521051;1.19538057842053,0.165002405783955,0.100852685888913]'; % outdoor ColorChecker, noon, sun off to side (IMG_3934.CR2)
+    cam_lam = 420 : 40 : 660;
+    cam_sen = cam_sen ./ max(cam_sen(:)); % 0 to 1
              
 	figure(20)
     clf
     hold on
     set(gcf,'color','white')
              
+    % Make dummy plots for legend purposes
+    gray = 0.5;
+    plot(0, 0, 'Color', [gray gray gray], 'Marker', 'd', 'LineWidth', 0.5)
+    plot(0, 0, 'Color', [gray gray gray], 'Marker', 's', 'LineWidth', 0.5)
+    plot(0, 0, 'Color', [gray gray gray], 'Marker', '^', 'LineWidth', 0.5)
+    plot(0, 0, 'Color', 'k', 'Marker', 'o', 'LineWidth', 1)
+    
     for cc = 1:3
         
+        offset = 0.50;
         switch cc
             case 1
-                col = 'r';
+                col1 = 'r';
+                col2 = [1 offset offset];
             case 2
-                col = 'g';
+                col1 = 'g';
+                col2 = [offset 1 offset];
             case 3
-                col = 'b';
+                col1 = 'b';
+                col2 = [offset offset 1];
         end
         
-        plot(lambda, Canon_300D(cc,:), [col '-o'])
-%         plot(lambda, Canon_450D(cc,:), 'r-o')
-        plot(lambda, Canon_500D(cc,:), [col '-s'])
-        plot(lambda, Canon_600D(cc,:), [col '-^'])
+        plot(lambda, Canon_300D(cc,:), 'Color', col2, 'Marker', 'd', 'LineWidth', 0.5)
+        plot(lambda, Canon_500D(cc,:), 'Color', col2, 'Marker', 's', 'LineWidth', 0.5)
+        plot(lambda, Canon_600D(cc,:), 'Color', col2, 'Marker', '^', 'LineWidth', 0.5)
+        plot(cam_lam, cam_sen(cc,:),   'k-o', 'LineWidth', 1)
         
         grid on
         grid minor
         
         xlabel('Wavelength, nm')
-        ylabel('Normalized Sensitivity, ~')
-        title('Comparison of Canon Camera Spectral Sensitivities')
+        ylabel('Sensitivity, ~')
+%         title('Comparison of Canon Camera Spectral Sensitivities')
         
     end
     
@@ -65,7 +81,10 @@
     
     xlim([400 700])
     
-    legend({'Canon 300D','Canon 500D','Canon 600D'}, 'location','northeast')
+    set(gca,'FontSize',12)
+    h_leg = legend({'Canon 300D (Jiang)','Canon 500D (Jiang)','Canon 600D (Jiang)','Canon 650D (author)'}, 'location','northeast');
+    pos = get(h_leg, 'position');
+    set(h_leg, 'position', pos + [0.10 0.05 0 0])
     
 % end
 

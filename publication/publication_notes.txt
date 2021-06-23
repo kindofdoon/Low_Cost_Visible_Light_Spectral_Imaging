@@ -1,0 +1,23 @@
+What are the key ideas?
+	The idea that SPDs are about 7-dimensional
+	Measuring camera sensitivity
+	Producing SPD estimates from sensor data
+
+What aspects are relevant in the title?
+	Low-cost
+	DSLR
+	7 laser line filters
+	Off-the-shelf components
+	
+Low-Cost Laser-Line DSLR Hyperspectral Imaging
+
+What is the sequence?
+	Realize that SPDs are of low dimensionality
+	Determine filter set
+	Measure camera sensitivity using filters
+	Measure SPDs using above
+
+Cost
+	Camera 		275
+	Spectro 1 	300
+	Filters 	700

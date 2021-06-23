@@ -32,7 +32,7 @@
                  ];
           
     % My result
-    cam_sen = [0.178525729228059,0.405687900126870,3.36907017364891;0.102162511237516,1.07622609950679,5.66390623359153;0.311844604160245,5.88218409372673,3.99770917904859;0.898880600040924,6.54077104371662,0.839672292951929;3.31833774006430,4.60404808832044,0.319526731989420;2.90950886352070,0.616163664086441,0.121384349521051;1.19538057842053,0.165002405783955,0.100852685888913]'; % outdoor ColorChecker, noon, sun off to side (IMG_3934.CR2)
+    cam_sen = [0,0.324694866969237,3.05473675948215;0,1.04977554824199,5.57611792769042;0.265164059907257,5.72463921155859,3.87135223697783;0.863769462708549,6.32371122333755,0.798446327637830;3.25245074826289,4.50246976722409,0.288404940976340;2.85571501768572,0.597087631106301,0;1.18558834951318,0.146233480990526,0.0632591933218305]'; % outdoor ColorChecker, noon, sun off to side (IMG_3934.CR2)
     cam_lam = 420 : 40 : 660;
     cam_sen = cam_sen ./ max(cam_sen(:)); % 0 to 1
              
@@ -66,7 +66,15 @@
         plot(lambda, Canon_300D(cc,:), 'Color', col2, 'Marker', 'd', 'LineWidth', 0.5)
         plot(lambda, Canon_500D(cc,:), 'Color', col2, 'Marker', 's', 'LineWidth', 0.5)
         plot(lambda, Canon_600D(cc,:), 'Color', col2, 'Marker', '^', 'LineWidth', 0.5)
-        plot(cam_lam, cam_sen(cc,:),   'k-o', 'LineWidth', 1)
+        
+        x_coarse = cam_lam;
+        y_coarse = cam_sen(cc,:);
+        
+        x_fine = min(x_coarse) : 1 : max(x_coarse);
+        y_fine = interp1(x_coarse, y_coarse, x_fine, 'cubic');
+        
+%         plot(x_fine, y_fine, 'k', 'LineWidth',2)
+        plot(x_coarse, y_coarse, 'k-o', 'LineWidth', 1)
         
         grid on
         grid minor
@@ -76,8 +84,6 @@
 %         title('Comparison of Canon Camera Spectral Sensitivities')
         
     end
-    
-    
     
     xlim([400 700])
     

@@ -21,7 +21,7 @@ function hyperspectral_image_GUI
     
     %% GUI properties
     
-    GUI.fig_size_basic = round([560 400] .* 0.75); % px
+    GUI.fig_size_basic = round([560 400] .* 1); % px
     GUI.input_dims     = [175 25]; % px, size of dropdowns, sliders, buttons, etc.
     GUI.input_x        = 170; % px
     GUI.label_x        = 20; % px
@@ -34,7 +34,7 @@ function hyperspectral_image_GUI
     
     % Default sizes for all figures
     GUI.fig_sizes = [
-                        360 1000                     % 1:  control panel
+                        360 1000                    % 1:  control panel
                         GUI.fig_size_basic          % 2:  observer
                         GUI.fig_size_basic          % 3:  camera
                         [560 GUI.fig_size_basic(2)] % 4:  filter colors
@@ -42,8 +42,9 @@ function hyperspectral_image_GUI
                         GUI.fig_size_basic          % 6:  sensor calibration
                         GUI.fig_size_basic(1) 900   % 7:  photo histograms
                         GUI.fig_size_basic          % 8:  image
-                        1000 420                    % 9:  mesh & spectra
-                        1000 420                    % 9:  mesh & reflectance
+                        [1200 800]                 % 9:  mesh
+                        GUI.fig_size_basic          % 10: SPDs
+                        GUI.fig_size_basic          % 11: reflectances (optional)
                     ];
     
     %% Constants
@@ -142,7 +143,7 @@ function hyperspectral_image_GUI
     Wavelength_Res.pos = [GUI.input_x, Export_Res.pos(2)-GUI.gap_small, GUI.input_dims];
     Wavelength_Res.vals = {'1','2','5','10','20'};
     uicontrol('Style','text', 'String','Wavelength Res, nm', 'Position',[GUI.label_x, Wavelength_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Wavelength_Res.handle = uicontrol('Style','popupmenu', 'String',Wavelength_Res.vals, 'Value',5, 'Position',Wavelength_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Wavelength_Res.handle = uicontrol('Style','popupmenu', 'String',Wavelength_Res.vals, 'Value',3, 'Position',Wavelength_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Wavelength_Res.handle,'Callback',@(hObject,eventdata) update_wavelength)
     
     CWL_Res.pos = [GUI.input_x, Wavelength_Res.pos(2)-GUI.gap_small, GUI.input_dims];
@@ -207,11 +208,11 @@ function hyperspectral_image_GUI
     Value_High.handle = uicontrol('Style','edit', 'String','0.95', 'Position',Value_High.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     %% Outputs
-    
+  
     Mesh_Density.pos = [GUI.input_x, Value_High.pos(2)-GUI.gap_large, GUI.input_dims];
     uicontrol('Style','text', 'String','Mesh Density, pt/side', 'Position',[GUI.label_x, Mesh_Density.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Mesh_Density.handle = uicontrol('Style','edit', 'String','15', 'Position',Mesh_Density.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    
+
     Custom_Mesh_Toggle.pos = [GUI.input_x, Mesh_Density.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Custom Mesh Toggle', 'Position',[GUI.label_x, Custom_Mesh_Toggle.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Custom_Mesh_Toggle.handle = uicontrol('Style','checkbox', 'Value', 0, 'String','', 'Position',Custom_Mesh_Toggle.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
@@ -477,12 +478,35 @@ function hyperspectral_image_GUI
 
         for w = 1 : qty_lam_calc % for each wavelength
             
-            S   = sum(Camera.sensitivity(Filter.ind_stations(w),:));
             T   = Filter.T(Filter.ind_stations(w),w);
+            RGB = double(Photo.RGB{w});
+            
+            % Weighted average by sensitivity
+            S   = sum(Camera.sensitivity(Filter.ind_stations(w),:));
             ST  = S * T;
             ST  = repmat(ST, [size(SPD,1),size(SPD,2)]);
-            RGB = double(Photo.RGB{w});
             SPD(:,:,w) = sum(RGB,3) ./ (ST);
+            
+%             % Unweighted average
+%             S = Camera.sensitivity(Filter.ind_stations(w),:);
+%             for cc = 1 : 3
+%                 SPD(:,:,w) = SPD(:,:,w) + RGB(:,:,cc) ./ S(cc) .* (1/T);
+%             end
+
+%             % Weighted average by product of sensitivity and measured value
+%             R = RGB(:,:,1);
+%             G = RGB(:,:,2);
+%             B = RGB(:,:,3);
+%             S = Camera.sensitivity(Filter.ind_stations(w),:);
+%             SR = S(1);
+%             SG = S(2);
+%             SB = S(3);
+%             alpha(:,:,1) = R ./ SR;
+%             alpha(:,:,2) = G ./ SG;
+%             alpha(:,:,3) = B ./ SB;
+%             alpha(find(isnan(alpha))) = 0;
+%             alpha(find(isinf(alpha))) = 0;
+%             SPD(:,:,w) = sum(alpha.^2,3) ./ (T.*sum(alpha,3));
             
         end
         
@@ -497,36 +521,6 @@ function hyperspectral_image_GUI
             SPD_     = SPD ./ SPD_mean;
             SPD = (1-zero_slope_fraction).*SPD./max(SPD(:)) + zero_slope_fraction.*SPD_./max(SPD_(:));
         end
-        
-        %%% START EXPERIMENT - adjust values to cover multiple orders of magnitude
-        filter_stations = Wavelength(Filter.ind_stations);
-        y_bar = interp1(Observer.lambda, Observer.sensitivity(:,2), filter_stations);
-        y_bar = reshape(y_bar, [1,1,length(y_bar)]);
-        y_bar = repmat(y_bar, [Photo.res,1]);
-        Brightness = sum(y_bar .* SPD, 3);
-        
-%         base = 10;
-%         Adjustment = (log10(Brightness)./log10(base)) ./ Brightness;
-
-        Adjustment = (Brightness.^0.5) ./ Brightness; % Stevens' Power Law
-
-        Adjustment = repmat(Adjustment, [1,1,Filter.qty]);
-        SPD = SPD .* Adjustment;
-        
-%         figure(999)
-%             clf
-%             set(gcf,'color','white')
-%             pcolor(Brightness .* Adjustment(:,:,1))
-%             set(gca,'YDir','reverse')
-%             shading flat
-%             colormap gray
-%             axis tight
-%             axis equal
-%         figure(998)
-%             clf
-%             set(gcf,'color','white')
-%             hist(Brightness(:), 100)
-        %%% END EXPERIMENT
 
         % Apply calibration
         CALIB = reshape(Sensor.calibration_gain(Filter.ind_stations), [1,1,qty_lam_calc]);
@@ -595,16 +589,14 @@ function hyperspectral_image_GUI
                     Illuminant.lambda = [300 305 310 315 320 325 330 335 340 345 350 355 360 365 370 375 380 385 390 395 400 405 410 415 420 425 430 435 440 445 450 455 460 465 470 475 480 485 490 495 500 505 510 515 520 525 530 535 540 545 550 555 560 565 570 575 580 585 590 595 600 605 610 615 620 625 630 635 640 645 650 655 660 665 670 675 680 685 690 695 700 705 710 715 720 725 730 735 740 745 750 755 760 765 770 775 780];
                     Illuminant.power  = [0.043 2.588 5.133 17.47 29.808 42.369 54.93 56.095 57.259 60 62.74 62.861 62.982 66.647 70.312 68.507 66.703 68.333 69.963 85.946 101.929 106.911 111.894 112.346 112.798 107.945 103.092 112.145 121.198 127.104 133.01 132.682 132.355 129.838 127.322 127.061 126.8 122.291 117.783 117.186 116.589 115.146 113.702 111.181 108.659 109.552 110.445 108.367 106.289 105.596 104.904 102.452 100 97.808 95.616 94.914 94.213 90.605 86.997 87.112 87.227 86.684 86.14 84.861 83.581 81.164 78.747 78.587 78.428 76.614 74.801 74.562 74.324 74.873 75.422 73.499 71.576 67.714 63.852 64.464 65.076 66.573 68.07 62.256 56.443 60.343 64.242 66.697 69.151 63.89 58.629 50.623 42.617 51.985 61.352 59.838 58.324];
             end
-
-            % Resample to match standard domain
-            Illuminant.power = interp1(Illuminant.lambda, Illuminant.power, Wavelength)';
-            Illuminant.lambda = Wavelength;
             
-            IL = reshape(Illuminant.power, [1,1,size(SPD,3)]);
-            IL = repmat(IL, [Photo.res,1]);
-            
-            RE = SPD ./ IL;
-            RE = RE ./ max(RE(:));
+            i_x = Wavelength(Filter.ind_stations);
+            i_y = interp1(Illuminant.lambda, Illuminant.power, i_x);
+            i_y = interp1(i_x, i_y, Wavelength, interp_method);
+            i_y = reshape(i_y, [1,1,size(SPD,3)]);
+            i_y = repmat(i_y, [size(SPD,1), size(SPD,2), 1]);
+            Reflectance = SPD ./ i_y;
+            Reflectance = Reflectance ./ max(Reflectance(:));
             
         end
         
@@ -714,24 +706,43 @@ function hyperspectral_image_GUI
             X             = X - round((margin_left-margin_right)/2);
             Y             = Y - round((margin_bottom-margin_top)/2);
         
+        end % mesh created
+        
+        if get(Reflectance_Toggle.handle, 'value')
+            RE = [];
+            SPD_mesh = [];
+            for y_ind = 1 : size(X,1)
+                for x_ind = 1 : size(X,2)
+                    RE(:,end+1) = squeeze(Reflectance(Y(y_ind,x_ind), X(y_ind,x_ind), :));
+                    SPD_mesh(:,end+1) = squeeze(SPD(Y(y_ind,x_ind), X(y_ind,x_ind), :));
+                end
+            end
+            assignin('base','Reflectance', RE)
+            assignin('base','SPD_mesh',SPD_mesh)
         end
 
         figure(9)
-            set(gcf,'Name','Image, Mesh, Spectra, and Colors','NumberTitle','off')
+            set(gcf,'Name','Reconstructed Image and Sample Mesh','NumberTitle','off')
             clf
             set(gcf,'color','white')
-        subplot(1,2,1)
-            set(gca,'position',[0.03 0.02 0.45 1.00])
             hold on
             image(Image.RGB)
-            title('Reconstructed Image and Sample Mesh')
+            
+%             title('Reconstructed Image and Sample Mesh')
+            set(gca,'xtick',[])
+            set(gca,'ytick',[])
+            set(gca,'position',[0 0 1 1])
+            
             axis equal
             axis tight
             set(gca,'YDir','reverse') % enforce standard directionality
             scatter(X(:), Y(:), 'wo','LineWidth',2.5)
             scatter(X(:), Y(:), 'ko','LineWidth',1)
-        subplot(1,2,2)
-            set(gca,'position',[0.55 0.165 0.42 0.71])
+        
+        figure(10)
+            set(gcf,'Name','SPDs and Colors at Sample Mesh','NumberTitle','off')
+            clf
+            set(gcf,'color','white')
             hold on
             for p = 1 : numel(X)
                 plot(Observer.lambda, squeeze(SPD(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
@@ -745,29 +756,18 @@ function hyperspectral_image_GUI
             grid minor
             xlabel('Wavelength, nm')
             ylabel('Spectral Power Distribution (SPD), ~')
-            title('Sample Mesh Spectra and Colors')
+            set(gca,'FontSize',8)
+%             title('SPDs and Colors at Sample Mesh')
             
         if get(Reflectance_Toggle.handle, 'value')
             
-            figure(10)
-                set(gcf,'Name','Image, Mesh, Reflectances, and Colors','NumberTitle','off')
+            figure(11)
+                set(gcf,'Name','Reflectances and Colors at Sample Mesh','NumberTitle','off')
                 clf
                 set(gcf,'color','white')
-            subplot(1,2,1)
-                set(gca,'position',[0.03 0.02 0.45 1.00])
-                hold on
-                image(Image.RGB)
-                title('Reconstructed Image and Sample Mesh')
-                axis equal
-                axis tight
-                set(gca,'YDir','reverse') % enforce standard directionality
-                scatter(X(:), Y(:), 'wo','LineWidth',2.5)
-                scatter(X(:), Y(:), 'ko','LineWidth',1)
-            subplot(1,2,2)
-                set(gca,'position',[0.55 0.165 0.42 0.71])
                 hold on
                 for p = 1 : numel(X)
-                    plot(Observer.lambda, squeeze(RE(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
+                    plot(Observer.lambda, squeeze(Reflectance(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
                 end
                 xlim(lambda_lims)
                 ylim([0 1])
@@ -777,11 +777,10 @@ function hyperspectral_image_GUI
                 grid on
                 grid minor
                 xlabel('Wavelength, nm')
-                ylabel('Reflectance, ~')
-                title('Sample Mesh Reflectances and Colors')
+                ylabel('Reflectance, Relative, ~')
+                title('Reflectances and Colors at Sample Mesh')
             
         end
-            
             
         switch Image.mode
             case 'preview'
@@ -889,7 +888,6 @@ function hyperspectral_image_GUI
             rect.y_gap = 10; % px
             rect.x = [1 1 -1 -1] .* rect.width/2;
             rect.y = [1 0 0 1] .* rect.height - rect.height - rect.y_gap;
-            
             
             target_lbl_qty = 10;
             delta = 1;
@@ -1417,9 +1415,10 @@ function hyperspectral_image_GUI
                     0.033016 0.35254 0.49797 0.60149 0.65736 0.78336 0.73926 0.776 0.72276 0.61365 0.4557 0.30535 0.17946 0.12249 0.073361 0.04487 0.020265 0.012304 0.0085751 0.0064746 0.0032885 0.002511 0.0020362 0.0023356 0.0027482 0.0036074 0.0036988 0.0031634 0.0022407 0.00069044 0.00012112 6.3737e-05 4.2452e-05
                     ];
             case 29 % Canon 650D
-%                     cam_sen = [0.173399304487555,0.303698099210867,2.21790490456186;0.102750870839229,0.727639341133992,3.72298587364416;0.237254159783574,4.07971154238881,2.75991307355139;0.747127233956319,5.32634999381013,0.690214923374762;2.99497691481399,4.06590277640314,0.301854901079775;2.56004291122510,0.544779830103635,0.130197162019287;1.02918405854270,0.153574454638870,0.105674674753442]'; % indoor ColorChecker
-%                     cam_sen = [0.289581428800725,0.566995989097700,4.78926501556801;0.166423142305156,1.53052281236594,8.12313979898939;0.443994247250501,8.38647781997344,5.70806205376773;1.29760801266776,9.48231106721598,1.21564452861908;4.88584306274033,6.76576678778523,0.468811559373408;4.28889908946512,0.908407865147952,0.187224983647568;1.73841174155306,0.239846119377407,0.156025095661054]'; % outdoor ColorChecker
-                    cam_sen = [0.178525729228059,0.405687900126870,3.36907017364891;0.102162511237516,1.07622609950679,5.66390623359153;0.311844604160245,5.88218409372673,3.99770917904859;0.898880600040924,6.54077104371662,0.839672292951929;3.31833774006430,4.60404808832044,0.319526731989420;2.90950886352070,0.616163664086441,0.121384349521051;1.19538057842053,0.165002405783955,0.100852685888913]'; % outdoor ColorChecker, noon, sun off to side (IMG_3934.CR2)
+%                     cam_sen = [0.178525729228059,0.405687900126870,3.36907017364891;0.102162511237516,1.07622609950679,5.66390623359153;0.311844604160245,5.88218409372673,3.99770917904859;0.898880600040924,6.54077104371662,0.839672292951929;3.31833774006430,4.60404808832044,0.319526731989420;2.90950886352070,0.616163664086441,0.121384349521051;1.19538057842053,0.165002405783955,0.100852685888913]';    % Canon 650D, unweighted, camera_sensitivity_from_reflected_illuminant.m, IMG_3934.CR2
+%                     cam_sen = [0.146439546637296,0.347783225397133,3.06067598033288;0.0860251840472579,1.04893868810093,5.56873572935351;0.291177676711976,5.72983088394832,3.87578755286238;0.866739641499135,6.33591072696990,0.798158612495667;3.26071860441723,4.51260645338342,0.297282846994763;2.85846991517282,0.596364864718292,0.0976758492512774;1.18527322468660,0.150965136903865,0.0822058497148891]'; % Canon 650D, weighted,   camera_sensitivity_from_reflected_illuminant.m, IMG_3934.CR2
+                    cam_sen = [0,0.324694866969237,3.05473675948215;0,1.04977554824199,5.57611792769042;0.265164059907257,5.72463921155859,3.87135223697783;0.863769462708549,6.32371122333755,0.798446327637830;3.25245074826289,4.50246976722409,0.288404940976340;2.85571501768572,0.597087631106301,0;1.18558834951318,0.146233480990526,0.0632591933218305]'; % using mode instead of histogram, Canon 650D, weighted,   camera_sensitivity_from_reflected_illuminant.m, IMG_3934.CR2
+                   
                     Camera.lambda = 420 : 40 : 660;
                 
         end

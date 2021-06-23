@@ -1,9 +1,8 @@
 % function calculate_camera_trichromate_sensitivity
 
-    % The idea here is that the user takes pictures of the sky during a
-    % specific time at which (1) a standard illuminant (e.g. CIE D65) can
-    % be used and (2) there are no clouds or other features, making the
-    % pictures spatially uniform. These pictures are taken through a series
+    % The idea here is that the user takes pictures of a light source (e.g.
+    % the sky, sun, lightbulb, etc.) with a spatially-uniform region in the
+    % center. These pictures are taken through a series
     % of narrow bandpass filters which ideally permit only a single
     % wavelength of light through, i.e. laser line filters. The ratio of
     % measured to actual light at each wavelength gives the camera
@@ -22,14 +21,16 @@
     
     %% User inputs
     
+    stations = 420 : 40 : 660;
+    
     Wavelength = 400 : 1 : 700; % nm, standard wavelength domain
-    Illuminant.description = 'Analytical'; % illuminant being imaged
+    Illuminant.description = 'Blue Sky'; % illuminant being imaged
     CWL_rounding = 5; % nm
-    RAW_black_level = 2048; % the leve corresponding to pure black, i.e. zero count
+    RAW_black_level = 2048; % the level corresponding to pure black, i.e. zero count
     window = 250; % px, use just this centered window to extract a 0D value from each photo
 %     [Photos.filename_first, Photos.pathdir] = uigetfile('*.*','Select the first photo in the stack, corresponding to the first filter');
-%         Photos.filename_first = 'IMG_3542.CR2';
-        Photos.filename_first = 'IMG_3606.CR2';
+        Photos.filename_first = 'IMG_3542.CR2';
+%         Photos.filename_first = 'IMG_3741.CR2';
         Photos.pathdir = 'C:\Users\Admin\Desktop\hyperspectral_imaging\spectral_sensitivity\data_photos';
     
     %% Set illuminant
@@ -69,9 +70,14 @@
 %             Illuminant.power = [0.0183210771428658,0.0948618891871906,0.186881887973467,0.433809802381437,0.553595216988628,0.641176142179489,0.944386068373068,0.839993604527586,0.889603138528724,0.795958675412023,0.835199817657300,0.879891623726191,0.847756072819085,0.789417264526370,0.871009218949070,0.632566253786832,0.714966840119105,0.743195529070385,0.800605645478753,0.843155418357141,0.994700932063153,0.963464608350570,0.941188788898386,0.967127869774171,0.928321337062195,0.824404973667782,0.727957757099607,0.824180537863724,0.861329524469071,0.900898032112759,0.900257866021867,0.868323106130292,0.838629496166176,0.802725993409676,0.781237733201040,0.770089434719786,0.729215026648003,0.701369352813631,0.686386992981170,0.651456535407490,0.624546937743262,0.600903236292382,0.567930725862245,0.543600464057864,0.539693575230936,0.537657639595333,0.521293576849123,0.491513271948133,0.479275799736495,0.474159026797322,0.462647452271047,0.435580016873992,0.417598094023247,0.395150012365544,0.383651293079142,0.379129992100040,0.375484229704975,0.334745897527310,0.321299750169373,0.328419325671644,0.332042656100001,0.325551666900573,0.313398174588140,0.304877857189285,0.289915273139036,0.277757057791023,0.272599805170573,0.270016031273941,0.262795291490955,0.245017690953741,0.238159231198697,0.236809950916180,0.235092073374310,0.232373876262163,0.227802054797618,0.220087764268520,0.209823195729411,0.184926421909820,0.179106613545194,0.180258041979325,0.185164828666737,0.185094816513567,0.180229234249373,0.150773828735485,0.149272218998435,0.154069836670155,0.170090922300686,0.177141574297296,0.182384356897819,0.182690065847755,0.168915038204165,0.113973666209354,0.0906420194587799,0.151902922017482,0.159385949612882,0.156927359046717,0.150443445058124,0.141206015337887,0.137551266164553,0.133853928572698];
             Illuminant.power = [0.218617753562055,0.181996575465667,0.181003720752620,0.202653976985706,0.224304233218791,0.247795869497936,0.216875157803342,0.202040735480784,0.190898914786363,0.181591897258624,0.196102175372289,0.140325412065101,0.199572651571679,0.248631210908349,0.297689770245020,0.307239030168936,0.289101182526855,0.304445660465240,0.259317427536318,0.205381011743395,0.278640352503848,0.288741675513360,0.283411369267524,0.290537680179811,0.319558236407139,0.296429348263715,0.294356451390335,0.292283554516954,0.286700114570655,0.278408527077133,0.272645111969510,0.269328476972101,0.266011841974692,0.261173701563217,0.241112435164893,0.224753693141097,0.230972383761239,0.237191074381380,0.228467586966648,0.219254711973847,0.205368391652771,0.191030854945222,0.190950296583959,0.199626192303938,0.201248459422236,0.202870726540534,0.190453943476917,0.184703878425096,0.183552269050996,0.182400659676895,0.179035253447060,0.174371235481954,0.169707217516847,0.165994779445087,0.162401758197894,0.158808736950701,0.152729659476682,0.143747106358700,0.134764553240717,0.138210666330762,0.143049718154557,0.141437465030817,0.139825211907077,0.138212958783336,0.136328998983042,0.133565136485202,0.130801273987361,0.128037411489520,0.125443895852191,0.124061964603270,0.122680033354350,0.121298102105429,0.119897530863035,0.116756778024580,0.113616025186125,0.110475272347669,0.108167090826795,0.108485998038084,0.108804905249373,0.109123812460662,0.109442719671951,0.0997446300644232,0.0873072488241396,0.0760415521600526,0.0905518302737170,0.0945280753418345,0.0933764659677342,0.0922248565936339,0.0910732472195336,0.0868910294641603,0.0803268560317884,0.0737626825994166,0.0738879832309045,0.0755002363546449,0.0771124894783854,0.0787247426021258,0.0787121387535599,0.0780211731290998,0.0773302075046397,0.0766392418801795];
             
-        case 'Analytical'
+        case 'Blue Sky'
             Illuminant.lambda = 400 : 5 : 700;
             Illuminant.power = [1,0.965510774233867,0.931757574243993,0.898777844326214,0.866601546828021,0.835251898257763,0.804746057432778,0.775095765983881,0.746307942117633,0.718385228989015,0.691326499376405,0.665127318596319,0.639780367763164,0.615275829603113,0.591601739082960,0.568744301124734,0.546688177653541,0.525416746176885,0.504912332024813,0.485156416296712,0.466129821466703,0.447812876498929,0.430185563219323,0.413227645584085,0.396918783378867,0.381238631777984,0.366166928091022,0.351683566925694,0.337768664901433,0.324402615958371,0.311566138221256,0.299240313297712,0.287406618815065,0.276046954929677,0.265143665477283,0.254679554372086,0.244637897806089,0.235002452748228,0.225757462194976,0.216887657580151,0.208378258711261,0.200214971562813,0.192383984223222,0.184871961261163,0.177666036749152,0.170753806156611,0.164123317301523,0.157763060528734,0.151661958263986,0.145809354075523,0.140195001359599,0.134809051752229,0.129642043356893,0.124684888866597,0.119928863648489,0.115365593850154,0.110987044578498,0.106785508194876,0.102753592763590,0.0988842106850922,0.0951705675400888];
+            
+        case 'Incandescent'
+            Illuminant.lambda = 400 : 5 : 700;
+%             Illuminant.power = [0.0544579457839233,0.0603247159373612,0.0666068111747424,0.0733138886082461,0.0804545010999865,0.0880360582236127,0.0960647955955827,0.104545752420612,0.113482757020756,0.122878420052598,0.132734135061819,0.143050085978818,0.153825261122471,0.165057473251114,0.176743385179786,0.188878540469959,0.201457398691869,0.214473374759256,0.227918881841389,0.241785377366756,0.256063411646299,0.270742678660842,0.285812068576876,0.301259721576517,0.317073082610836,0.333238956710361,0.349743564511963,0.366572597687232,0.383711273983498,0.401144391614480,0.418856382763140,0.436831365984138,0.455053197317534,0.473505519948566,0.492171812270625,0.511035434229667,0.530079671848286,0.549287779846441,0.568643022293376,0.588128711241567,0.607728243308540,0.627425134186343,0.647203051070942,0.667045843015427,0.686937569221137,0.706862525290186,0.726805267470995,0.746750634935805,0.766683770135406,0.786590137281798,0.806455539014209,0.826266131307698,0.846008436686890,0.865669355809824,0.885236177488953,0.904696587217723,0.924038674272023,0.943250937456378,0.962322289564750,0.981242060625571,1];
+            Illuminant.power = [1,1.12157691604683,1.25366428115006,1.39673207162196,1.55123783938109,1.71762468297514,1.89631933005703,2.08773034165712,2.29224644679277,2.51023501420561,2.74204066633430,2.98798403903334,3.24836068904869,3.52344014986818,3.81346513528529,4.11865088885323,4.43918467636380,4.77522541756188,5.12690345250086,5.49432043725181,5.87754936309708,6.27663469286094,6.69159260765020,7.12241135699009,7.56905170513743,8.03144746622941,8.50950612087090,9.00310950677492,9.51211457613676,10.0363542125395,10.5756381003512,11.1297536397695,11.6984669009058,12.2815236105508,12.8786501655501,13.4895546670072,14.1139279698449,14.7514447425700,15.4017645324099,16.0645328313154,16.7393821386470,17.4259330166838,18.1237951354118,18.8325683033565,19.5518434815272,20.2812037778327,21.0202254196072,21.7684787021577,22.5255289114997,23.2909372196948,24.0642615514330,24.8450574207260,25.6328787367786,26.4272785783024,27.2278099357125,28.0340264208167,28.8454829437613,29.6617363571380,30.4823460672887,31.3068746129650,32.1348882116046];
 
     end
     
@@ -115,7 +121,7 @@
         grid on
         grid minor
         xlabel('Wavelength, nm')
-        ylabel('Power, ~')
+        ylabel('Radiance, \propto W-sr^{-1}-m^{-2}')
         title(['Illuminant: ' Illuminant.description])
         
     figure(2)
@@ -140,7 +146,6 @@
     I_dot_T = zeros(Filters.qty, 1);
     for f = 1 : Filters.qty
         T = Filters.T(:,f);
-%         T = T ./ sum(T);
         I_dot_T(f) = dot(Illuminant.power, T);
     end
     
@@ -152,10 +157,8 @@
         grid on
         grid minor
         xlabel('Wavelength, nm')
-        ylabel('Power, ~')
+        ylabel('Radiance, \propto W-sr^{-1}-m^{-2}')
         title('Dot Product of Illuminant and Filter Transmissions')
-        
-%     return
         
     %% Load photos
     
@@ -188,8 +191,8 @@
     for p = 1 : Photos.qty
         
         subplot(Filters.qty, 1, p)
-        cla
-        hold on
+            cla
+            hold on
 
         % Update waitbar
         status = p / (Photos.qty+1);
@@ -202,6 +205,13 @@
             case {'CR2','CRW'}
                 [~, Orig, ~] = extract_RAW_via_dcraw(Photos.pathdir, Photos.filenames{p}, 'rggb', '-D -4 -j -t 0', 0, 0, 0);
                 Orig = Orig - RAW_black_level;
+                
+                
+                %%%
+%                 Orig = double(Orig) .^ 0.2; % experimental gamma correction
+                %%%
+                
+                
                 qty_neg = length(find(Orig<0));
                 max_count = max(Orig(:));
                 if qty_neg > 0
@@ -225,7 +235,7 @@
             case 'uint16'
                 edges = linspace(0, double(max_count), 1000);
             otherwise
-                error('Unrecognized photo file class')
+                edges = linspace(0, double(max_count), 1000);
         end
         
         for cc = 1 : 3
@@ -246,7 +256,13 @@
                     col = 'b';
             end
             
-            plot(centers, counts, [col '-'])
+            plot(centers, counts, 'Color', col)
+            
+            x = Measurements(p,cc);
+            y = interp1(centers, counts, x);
+            
+%             scatter(x, y, 'ko')
+            plot([x x], [1 y], 'k:o')
             
         end
         
@@ -287,8 +303,11 @@
         
     %% Calculate sensitivities
     
-    Sensitivity = Measurements ./ repmat(I_dot_T,[1,3]);
-    Sensitivity = Sensitivity ./ max(Sensitivity(:)); % scale 0-1
+    Sensitivity_Radiance          = Measurements ./ repmat(I_dot_T,[1,3]);
+    Sensitivity_Spectral_Radiance = Measurements ./ repmat(I_dot_T./stations',[1,3]);
+    
+    Sensitivity_Radiance = Sensitivity_Radiance ./ max(Sensitivity_Radiance(:)); % scale 0-1
+    Sensitivity_Spectral_Radiance = Sensitivity_Spectral_Radiance ./ max(Sensitivity_Spectral_Radiance(:)); % scale 0-1
     
     %% Show sensitivities
     
@@ -305,48 +324,70 @@
                 case 3
                     col = 'b';
             end
-            plot(Filters.stations, Sensitivity(:,cc), [col '-o'])
+            plot(Filters.stations, Sensitivity_Radiance(:,cc), [col '-o'])
         end
         axis([min(Wavelength) max(Wavelength) 0 max(ylim)])
         grid on
         grid minor
         xlabel('Wavelength, nm')
-        ylabel('Spectral Sensitivity, 0-1')
-        title('Camera Spectral Sensitivity')
+        ylabel('Sensitivity, RAW Value / Radiance, ~')
+        title('Camera Radiance Sensitivity')
+        
+    figure(7)
+        clf
+        hold on
+        set(gcf,'color','white')
+        for cc = 1 : 3
+            switch cc
+                case 1
+                    col = 'r';
+                case 2
+                    col = 'g';
+                case 3
+                    col = 'b';
+            end
+            plot(Filters.stations, Sensitivity_Spectral_Radiance(:,cc), [col '-o'])
+        end
+        axis([min(Wavelength) max(Wavelength) 0 max(ylim)])
+        grid on
+        grid minor
+        xlabel('Wavelength, nm')
+        ylabel('Sensitivity, RAW Value / Spectral Radiance, ~')
+        title('Camera Spectral Radiance Sensitivity')
         
     %% Reconstruct illuminant
     
     % As a check - derive the illuminant using only the RGB measurements,
     % calculated sensitivities, and filter transmissions; should see good agreement
 
-    figure(7)
+    figure(8)
         clf
         hold on
         set(gcf,'color','white')
         title('pchip Sensitivity interp/extrap')
     
-    S_dot_T = zeros(Filters.qty, 3);
-    S_min = min(Sensitivity(:));
-    for cc = 1 : 3
-        S_ = interp1(Filters.stations, Sensitivity(:,cc), Wavelength, 'pchip','extrap');
-        S_(S_<S_min) = S_min;
-        switch cc
-            case 1
-                col = 'r';
-            case 2
-                col = 'g';
-            case 3
-                col = 'b';
+        S_dot_T = zeros(Filters.qty, 3);
+        S_min = min(Sensitivity_Radiance(:));
+        for cc = 1 : 3
+            S_ = interp1(Filters.stations, Sensitivity_Radiance(:,cc), Wavelength, 'pchip','extrap');
+            S_(S_<S_min) = S_min;
+            switch cc
+                case 1
+                    col = 'r';
+                case 2
+                    col = 'g';
+                case 3
+                    col = 'b';
+            end
+            plot(Wavelength, S_, col)
+            scatter(Filters.stations, Sensitivity_Radiance(:,cc), col)
+            for i_lam = 1 : Filters.qty
+                S_dot_T(i_lam,cc) = dot(S_, Filters.T(:,i_lam));
+            end
         end
-        plot(Wavelength, S_, col)
-        scatter(Filters.stations, Sensitivity(:,cc), col)
-        for i_lam = 1 : Filters.qty
-            S_dot_T(i_lam,cc) = dot(S_, Filters.T(:,i_lam));
-        end
-    end
-    SPD_cc = Measurements ./ S_dot_T;
-    grid on
-    grid minor
+        SPD_cc = Measurements ./ S_dot_T;
+        grid on
+        grid minor
 
     % Scale to match input
     Illum_mid  = interp1(Illuminant.lambda, Illuminant.power, mean(Filters.stations));
@@ -368,7 +409,7 @@
         grid on
         grid minor
         xlabel('Wavelength, nm')
-        ylabel('Power, ~')
+        ylabel('Radiance, \propto W-sr^{-1}-m^{-2}')
         title(['Illuminant: ' Illuminant.description])
     
 % end

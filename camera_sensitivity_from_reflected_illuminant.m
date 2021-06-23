@@ -221,7 +221,7 @@
         if p==1
             % Show a preview of the swatch extraction regions to ensure
             % user wants to proceed with data collection
-            figure(1)
+            figure(101)
                 win_x = Swatch.window/2 .* [1 1 -1 -1 1];
                 win_y = Swatch.window/2 .* [1 -1 -1 1 1];
                 clf
@@ -238,9 +238,11 @@
                         scatter(xo, yo, 'w+')
                         plot(xo+win_x, yo+win_y, 'k')
                         plot(xo+win_x, yo+win_y, 'w:')
-                        text(min(xo+win_x), min(yo+win_y), [' ' num2str(counter)],'HorizontalAlignment','left','VerticalAlignment','top','Color','w')
+                        text(min(xo+win_x), min(yo+win_y), num2str(counter),'HorizontalAlignment','left','VerticalAlignment','bottom','Color','w', 'FontSize',12)
                         set(gca,'YDir','reverse') % enforce that y-axis stays "inverted"
-                        set(gcf,'position',[-1700 180 1450 900])
+                        set(gca,'FontSize',12)
+                        pos = get(gcf,'position');
+                        set(gcf,'position',[pos(1) 100 1000 650])
                         counter = counter + 1;
                     end
                 end
@@ -266,9 +268,9 @@
     % Page:   swatch
     Value_Measured = nan(Filter.qty, 3, Swatch.qty);
     
-    bin.edge   = linspace(0, Photo.max_val, 1000);
-    bin.width  = abs(diff(bin.edge(1:2)));
-    bin.center = bin.edge(1:end-1) + bin.width/2;
+%     bin.edge   = linspace(0, Photo.max_val, 1000);
+%     bin.width  = abs(diff(bin.edge(1:2)));
+%     bin.center = bin.edge(1:end-1) + bin.width/2;
     
     for p = 1 : Photo.qty
         
@@ -282,18 +284,16 @@
                 for x_ind = 1 : Swatch.dim(2)
                     
                     i_swatch = i_swatch + 1;
-                    
                     xo = Swatch.X(y_ind,x_ind);
                     yo = Swatch.Y(y_ind,x_ind);
-                    
                     domain_x = round((xo-Swatch.window/2) : (xo+Swatch.window/2));
                     domain_y = round((yo-Swatch.window/2) : (yo+Swatch.window/2));
-                    
                     CC_swatch = CC(domain_y, domain_x);
                     
-                    [bin.count, ~] = histcounts(CC_swatch(:), bin.edge);
-                    
-                    Value_Measured(p, cc, i_swatch) = dot(bin.count, bin.center) / sum(bin.count);
+%                     [bin.count, ~] = histcounts(CC_swatch(:), bin.edge);
+%                     Value_Measured(p, cc, i_swatch) = dot(bin.count, bin.center) / sum(bin.count);
+
+                    Value_Measured(p, cc, i_swatch) = double(mode(CC_swatch(:)));
                     
                 end
                 
@@ -302,7 +302,7 @@
         end
     end
     
-    %% Calculate actual values from illuminant, reflectance
+    %% Calculate actual values from illuminant, reflectance, filter
     
     % Row:    wavelength
     % Column: color channel
@@ -330,13 +330,26 @@
     
     %% Calculate sensitivity
     
-    Sensitivity = Value_Measured ./ Value_Actual;
+    fuse_mode = 'weighted'; % 'unweighted' or 'weighted'
     
-    Sensitivity_Mean = sum(Sensitivity, 3) ./ Swatch.qty;
+    Sensitivity = Value_Measured ./ Value_Actual; % independent unfused estimates from every swatch
+    
+    switch fuse_mode
+        case 'unweighted'
+            Sensitivity_Mean = sum(Sensitivity, 3) ./ Swatch.qty;
+        case 'weighted'
+            Weight = Value_Measured;
+            Weight = Weight ./ repmat(sum(Weight,3), [1,1,Swatch.qty]);
+            Sensitivity_Mean = sum(Sensitivity .* Weight, 3);
+        otherwise
+            error('Unrecognized fuse mode')
+    end
+    
+    Sensitivity_Mean(find(isnan(Sensitivity_Mean))) = 0;
     
     %% Visualize results
     
-    figure(3)
+    figure(103)
         clf
         hold on
         set(gcf,'color','white')
@@ -359,11 +372,10 @@
     
     xlabel('Wavelength, nm')
     ylabel('Sensitivity, ~')
-    title('Camera Spectral Sensitivity Per Variably Reflected Illuminant')
+%     title('Camera Spectral Sensitivity Per Variably Reflected Illuminant')
+    set(gca,'FontSize',12)
 
 % end
-
-
 
 
 

@@ -261,6 +261,20 @@
         warning(['Maximum RGB value in photo stack (' num2str(Photo.max_val) ') indicates possible saturation'])
     end
     
+    %%
+    %%% TEST - use only the white swatch
+%     return
+    
+    Swatch.R = Swatch.R(:,19);
+    Swatch.X = Swatch.X(4);
+    Swatch.Y = Swatch.Y(4);
+    Swatch.dim = [1,1];
+    
+%     return
+    
+    %%%
+    %%
+    
     %% Extract measured values from photos
     
     % Row:    wavelength

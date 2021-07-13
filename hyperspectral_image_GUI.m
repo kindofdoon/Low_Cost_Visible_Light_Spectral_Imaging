@@ -134,7 +134,7 @@ function hyperspectral_image_GUI
     
     Preview_Res.pos = [GUI.input_x, Load_Photos.pos(2)-GUI.gap_large, GUI.input_dims];
     uicontrol('Style','text', 'String','Preview Res, px', 'Position',[GUI.label_x, Preview_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Preview_Res.handle = uicontrol('Style','edit', 'String','500', 'Position',Preview_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Preview_Res.handle = uicontrol('Style','edit', 'String','1500', 'Position',Preview_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Export_Res.pos = [GUI.input_x, Preview_Res.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Export Res, px', 'Position',[GUI.label_x, Export_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
@@ -211,7 +211,7 @@ function hyperspectral_image_GUI
   
     Mesh_Density.pos = [GUI.input_x, Value_High.pos(2)-GUI.gap_large, GUI.input_dims];
     uicontrol('Style','text', 'String','Mesh Density, pt/side', 'Position',[GUI.label_x, Mesh_Density.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Mesh_Density.handle = uicontrol('Style','edit', 'String','15', 'Position',Mesh_Density.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Mesh_Density.handle = uicontrol('Style','edit', 'String','5', 'Position',Mesh_Density.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
 
     Custom_Mesh_Toggle.pos = [GUI.input_x, Mesh_Density.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Custom Mesh Toggle', 'Position',[GUI.label_x, Custom_Mesh_Toggle.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
@@ -294,11 +294,27 @@ function hyperspectral_image_GUI
         % In this function, overall system properties are calculated
 
         % Take dot product of S (camera sensitivities) and T (filter transmissions)
+        domain = 400 : 1 : 700;
         Sensor.S_dot_T = zeros(Filter.qty, 3);
         for cc = 1 : 3
-            S_ = interp1(Camera.lam_orig, Camera.Sen_orig(:,cc), Filter.lam_orig, 'pchip','extrap');
+            
+            S = Camera.Sen_orig(:,cc);
+            x_wider = [min(domain) Camera.lam_orig max(domain)];
+            S = interp1(Camera.lam_orig, S, x_wider, 'linear','extrap');
+            S = interp1(x_wider, S, domain, 'pchip');
+            S(S<0) = 0;
+            
             for i_lam = 1 : Filter.qty
-                Sensor.S_dot_T(i_lam,cc) = dot(S_, Filter.T_orig(:,i_lam));
+                T = interp1(Filter.lam_orig, Filter.T_orig(:,i_lam), domain);
+                Sensor.S_dot_T(i_lam,cc) = dot(S, T);
+%                 figure(22)
+%                     clf
+%                     hold on
+%                     plot(domain, S)
+%                     plot(domain, T)
+%                     scatter(Camera.lam_orig, Camera.Sen_orig(:,cc), 'ko')
+%                     drawnow
+%                     pause
             end
         end
         
@@ -478,14 +494,26 @@ function hyperspectral_image_GUI
 
         for w = 1 : qty_lam_calc % for each wavelength
             
-            T   = Filter.T(Filter.ind_stations(w),w);
+%             T   = Filter.T(Filter.ind_stations(w),w);
             RGB = double(Photo.RGB{w});
             
-            % Weighted average by sensitivity
-            S   = sum(Camera.sensitivity(Filter.ind_stations(w),:));
-            ST  = S * T;
-            ST  = repmat(ST, [size(SPD,1),size(SPD,2)]);
-            SPD(:,:,w) = sum(RGB,3) ./ (ST);
+            for cc = 1 : 3
+                S = Camera.sensitivity(Filter.ind_stations(w),cc);
+                SPD(:,:,w) = SPD(:,:,w) + (RGB(:,:,cc).*S) ./ Sensor.S_dot_T(w,cc);
+            end
+            S = sum(Camera.sensitivity(Filter.ind_stations(w),:));
+            SPD(:,:,w) = SPD(:,:,w) ./ S;
+            
+%             % Weighted average by sensitivity - dot product of S and T
+%             ST = sum(Sensor.S_dot_T(w,:));
+%             ST = repmat(ST, [size(SPD,1),size(SPD,2)]);
+%             SPD(:,:,w) = sum(RGB,3) ./ (ST);
+            
+%             % Weighted average by sensitivity - scalar product of S and T
+%             S   = sum(Camera.sensitivity(Filter.ind_stations(w),:));
+%             ST  = S * T;
+%             ST  = repmat(ST, [size(SPD,1),size(SPD,2)]);
+%             SPD(:,:,w) = sum(RGB,3) ./ (ST);
             
 %             % Unweighted average
 %             S = Camera.sensitivity(Filter.ind_stations(w),:);
@@ -736,8 +764,8 @@ function hyperspectral_image_GUI
             axis equal
             axis tight
             set(gca,'YDir','reverse') % enforce standard directionality
-            scatter(X(:), Y(:), 'wo','LineWidth',2.5)
-            scatter(X(:), Y(:), 'ko','LineWidth',1)
+            scatter(X(:), Y(:), 75, 'wo','LineWidth',2)
+            scatter(X(:), Y(:), 75, 'ko','LineWidth',1)
         
         figure(10)
             set(gcf,'Name','SPDs and Colors at Sample Mesh','NumberTitle','off')
@@ -758,6 +786,64 @@ function hyperspectral_image_GUI
             ylabel('Spectral Power Distribution (SPD), ~')
             set(gca,'FontSize',8)
 %             title('SPDs and Colors at Sample Mesh')
+
+        %%% DEBUG - show each curve that gets sensitivity-averaged
+        
+%         clc
+%         selection = [3 3 2 2 2 1 1]; % BBGGGRR
+%         
+%         figure(36)
+%             clf
+%             set(gcf,'color','white')
+%             hold on
+%             for p = 1 : numel(X)
+%                 
+%                 for f = 1 : Filter.qty
+%                     
+%                     P(f) = double(Photo.RGB_calc{f}(Y(p),X(p),selection(f)));
+%                     P(f) = P(f) / Sensor.S_dot_T(f,selection(f));
+%                     
+%                 end
+%                 
+%                 plot(Filter.stations, P, 'k')
+%                 
+%             end
+%             grid on
+%             grid minor
+%             xlabel('Wavelength, nm')
+%             ylabel('SPD, ~')
+        
+%         figure(35)
+%             clf
+%             set(gcf,'color','white')
+%             hold on
+%             for p = 1 : numel(X)
+%                 
+%                 for cc = 1 : 3
+%                     
+%                     P = zeros(Filter.qty,1);
+%                     for f = 1 : Filter.qty
+%                         P(f) = Photo.RGB_calc{f}(Y(p),X(p),cc);
+%                     end
+%                     
+%                     P
+% %                     P(P==0) = NaN;
+%                     SPD_cc = P ./ Sensor.S_dot_T(:,cc);
+%                     SPD_cc
+%                     
+%                     col = [0 0 0];
+%                     col(cc) = 1;
+%                     plot(Filter.stations, SPD_cc, '-o', 'Color', col)
+%                     
+%                 end
+%                 
+%             end
+%             xlabel('Wavelength, nm')
+%             ylabel('SPD, ~')
+%             set(gca,'yscale','log')
+%             grid on
+%             grid minor
+        %%%
             
         if get(Reflectance_Toggle.handle, 'value')
             
@@ -1415,10 +1501,8 @@ function hyperspectral_image_GUI
                     0.033016 0.35254 0.49797 0.60149 0.65736 0.78336 0.73926 0.776 0.72276 0.61365 0.4557 0.30535 0.17946 0.12249 0.073361 0.04487 0.020265 0.012304 0.0085751 0.0064746 0.0032885 0.002511 0.0020362 0.0023356 0.0027482 0.0036074 0.0036988 0.0031634 0.0022407 0.00069044 0.00012112 6.3737e-05 4.2452e-05
                     ];
             case 29 % Canon 650D
-%                     cam_sen = [0.178525729228059,0.405687900126870,3.36907017364891;0.102162511237516,1.07622609950679,5.66390623359153;0.311844604160245,5.88218409372673,3.99770917904859;0.898880600040924,6.54077104371662,0.839672292951929;3.31833774006430,4.60404808832044,0.319526731989420;2.90950886352070,0.616163664086441,0.121384349521051;1.19538057842053,0.165002405783955,0.100852685888913]';    % Canon 650D, unweighted, camera_sensitivity_from_reflected_illuminant.m, IMG_3934.CR2
-%                     cam_sen = [0.146439546637296,0.347783225397133,3.06067598033288;0.0860251840472579,1.04893868810093,5.56873572935351;0.291177676711976,5.72983088394832,3.87578755286238;0.866739641499135,6.33591072696990,0.798158612495667;3.26071860441723,4.51260645338342,0.297282846994763;2.85846991517282,0.596364864718292,0.0976758492512774;1.18527322468660,0.150965136903865,0.0822058497148891]'; % Canon 650D, weighted,   camera_sensitivity_from_reflected_illuminant.m, IMG_3934.CR2
                     cam_sen = [0,0.324694866969237,3.05473675948215;0,1.04977554824199,5.57611792769042;0.265164059907257,5.72463921155859,3.87135223697783;0.863769462708549,6.32371122333755,0.798446327637830;3.25245074826289,4.50246976722409,0.288404940976340;2.85571501768572,0.597087631106301,0;1.18558834951318,0.146233480990526,0.0632591933218305]'; % using mode instead of histogram, Canon 650D, weighted,   camera_sensitivity_from_reflected_illuminant.m, IMG_3934.CR2
-                   
+%                     cam_sen = [0,0.276800000000000,2.53560000000000;0,0.926200000000000,5.20690000000000;0.237900000000000,5.10770000000000,3.49270000000000;0.745400000000000,5.64790000000000,0.703200000000000;2.85400000000000,4.03850000000000,0.264400000000000;2.54300000000000,0.538300000000000,0;1.05220000000000,0.129600000000000,0.0558000000000000]'; % TEST using white only
                     Camera.lambda = 420 : 40 : 660;
                 
         end

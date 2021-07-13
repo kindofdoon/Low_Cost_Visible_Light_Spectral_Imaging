@@ -26,6 +26,7 @@
 \usepackage{relsize}
 \usepackage{float}
 \usepackage{courier}
+\usepackage{xcolor}
 
 \setlength{\parindent}{0pt}
 \newcommand{\id}{\hspace{6 mm}}
@@ -48,6 +49,10 @@ daniel.w.dichter@gmail.com
 \begin{document}
 
 \maketitle
+
+\color{red}
+\emph{\textbf{DRAFT: \today}}\\
+\color{black}
 
 \begin{abstract}{\it Spectral imaging is an emerging technology for measuring spectral power distributions (SPDs) of electromagnetic radiation over a 2D spatial domain. Within the visible light wavelength band, spectral imaging measures light and color with greater accuracy than conventional cameras. However, adoption of this technology is impeded by high cost and complexity. To address these barriers, a simple low-cost method is developed using unmodified commodity hardware --- primarily a DSLR camera and a series of narrow bandpass filters. The quantity of filters is strictly minimized to a total of seven, set by the dimensionality of SPDs, the spectral sensitivities of eyes and cameras, and commercial availability. Camera spectral sensitivity is measured using this same filter series, a color chart, a spectrophotometer, and noon daylight modeled as CIE D65. The RAW photo format is used to access unprocessed 14-bit sensor data. Independent SPD measurements from each color channel are fused as a sensitivity-weighted average for efficient and continuous interpolation between color channels with a bias toward maximal signal-to-noise ratio. Images are reconstructed from SPDs with standard methods. The method is demonstrated with a Canon 650D camera, ThorLabs 1'' narrow bandpass filters, an X-Rite ColorChecker chart, and a Spectro 1 spectrophotometer. Accuracy is verified by quantitative comparison against SPDs from direct measurement, and by qualitative assessment of reconstructed images. The total hardware cost is \$1,500 from scratch, or \$800 starting with a camera of known spectral sensitivity.
 }
@@ -197,9 +202,9 @@ $V_M$ is calculated as the mode of the values inside a square inset slightly fro
 
 \begin{figure}
 \centering
-\includegraphics[width=0.2\textwidth]{canon_40_mm_prime_lens.jpg}
-\caption{Canon 40 mm prime lens}
-\label{canon_40_mm_prime_lens}
+\includegraphics[width=0.45\textwidth]{IMG_20210712_212507_GIMP.jpg}
+\caption{Placeholder text}
+\label{canon}
 \end{figure}
 
 The open-source \texttt{dcraw} utility is used to extract RAW values stored in the .CR2 file format. The modifier string \texttt{-D -4 -j -t 0} specifies that the extracted RAW values are unprocessed sensor measurements:\\
@@ -223,31 +228,23 @@ Assuming a linear sensor response, $V_M \propto P$, with $P$ denoting the RAW ph
 
  $SPD = V_A = \dfrac{P}{ST}$ \\
 
- At an arbitrary pixel and CWL, each color channel produces an independent SPD measurement, collectively given as: \\
+Accounting for the non-zero bandwidth of the filters, the denominator $ST$ is most accurately and generally expressed as $S(\lambda) \cdot T(\lambda)$, rather than $S(\lambda=CWL)*T(\lambda=CWL)$.
 
- $SPD = \left[ \dfrac{P_R}{S_RT},\dfrac{P_G}{S_GT},\dfrac{P_B}{S_BT} \right] $ \\
+\id At an arbitrary pixel and CWL, each color channel produces an independent SPD measurement, collectively given as: \\
 
-These measurements are theoretically equal, but practically differ as a result of various sources of error: \\
+ $SPD = \left[ \dfrac{P_R}{S_R \cdot T},\dfrac{P_G}{S_G \cdot T},\dfrac{P_B}{S_B \cdot T} \right] $ \\
 
-$\dfrac{P_R}{S_RT} \approx \dfrac{P_G}{S_GT} \approx \dfrac{P_B}{S_BT}$ \\
+These measurements are theoretically equal, but in practice differ as a result of various sources of error. They are fused as a sensitivity-weighted average: \\
 
-They are fused as a sensitivity-weighted average: \\
+$\overline{SPD} = \dfrac{1}{S_R+S_G+S_B} \left( \dfrac{P_R S_R}{S_R \cdot T} + \dfrac{P_G S_G}{S_G \cdot T} + \dfrac{P_B S_B}{S_B \cdot T} \right)$\\
 
- $\overline{SPD} = \left[ \dfrac{P_R}{S_RT},\dfrac{P_G}{S_GT},\dfrac{P_B}{S_BT} \right] \cdot \left[ \dfrac{1}{S_R+S_G+S_B}\right] * \left[ S_R, S_G, S_B \right] $ \\
+%with $\odot$ denoting element-wise product and $\cdot$ denoting dot product. This simplifies to:\\
 
- which simplifies to:\\
+% $\overline{SPD} = \dfrac{P_R+P_G+P_B}{T(S_R+S_G+S_B)} =  \dfrac{\mathlarger{\sum_{R,G,B}}P}{T \mathlarger{\sum_{R,G,B}}S}$ \\
 
- $\overline{SPD} = \dfrac{P_R+P_G+P_B}{T(S_R+S_G+S_B)} =  \dfrac{\mathlarger{\sum_{R,G,B}}P}{T \mathlarger{\sum_{R,G,B}}S}$ \\
+Calculating $\overline{SPD}$ as a sensitivity-weighted average continuously interpolates between color channels as a function of wavelength, without discontinuities or switching behavior. Since $S_R+S_G+S_B > 0$ for all $\lambda$, divide-by-zero is precluded. This formulation generalizes efficiently from a 0D pixel to a 2D channel simply by using matrices in place of scalars for $P$.
 
- Calculating $\overline{SPD}$ as a sensitivity-weighted average does not strictly maximize signal-to-noise ratio, but has several benefits:
-
-\begin{enumerate}
-\item There is continuous interpolation between color channels as a function of wavelength, therefore no non-physical discontinuities or inefficient logical switching behavior.
-\item $\mathlarger{\sum_{R,G,B}}S > 0$ at all wavelengths; divide-by-zero is precluded.
-\item $\mathlarger{\sum_{R,G,B}}P$ and $\mathlarger{\sum_{R,G,B}}S$ are simple, fast matrix summations.
-\end{enumerate}
-
- The HSDC is first calculated in a sparse fashion, only at the CWLs of the filters. The full (i.e. non-sparse) HSDC is then calculated by means of 3D cubic interpolation in the wavelength domain between the filter CWLs, as discussed in Section \ref{curve_reconstruction}.
+\id The HSDC is first calculated in a sparse fashion, only at the CWLs of the filters. The full (i.e. non-sparse) HSDC is then calculated by means of 3D cubic interpolation in the wavelength domain between the filter CWLs, as discussed in Section \ref{curve_reconstruction}.
 
 \subsection{Validation}
 
@@ -274,7 +271,7 @@ Placeholder text here
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.45\linewidth]{colorchecker_mesh.png}
+  \includegraphics[height=0.55\linewidth]{colorchecker.png}
   \caption{Reconstructed image of ColorChecker chart under noon daylight. Mesh sample points overlaid as black-and-white circles.}
   \label{colorchecker_mesh}
   \end{centering}
@@ -282,7 +279,7 @@ Placeholder text here
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.6\linewidth]{colorchecker_SPDs.eps}
+  \includegraphics[height=0.6\linewidth]{colorchecker.eps}
   \caption{SPD curves at mesh points in Figure \ref{colorchecker_mesh}.}
   \label{colorchecker_SPDs}
     \end{centering}
@@ -293,7 +290,7 @@ Placeholder text here
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.45\linewidth]{tomato_bottle_broccoli_mesh.png}
+  \includegraphics[height=0.55\linewidth]{broccoli_bottle_tomato.png}
   \caption{Placeholder text here}
   \label{tomato_mesh}
   \end{centering}
@@ -301,7 +298,25 @@ Placeholder text here
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.6\linewidth]{tomato_bottle_broccoli_SPDs.eps}
+  \includegraphics[height=0.6\linewidth]{broccoli_bottle_tomato.eps}
+  \caption{Placeholder text here}
+  \label{tomato_SPDs}
+  \end{centering}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[H]
+\begin{centering}
+  \includegraphics[height=0.55\linewidth]{vermont_path.png}
+  \caption{Placeholder text here}
+  \label{tomato_mesh}
+  \end{centering}
+\end{figure}
+
+\begin{figure}[H]
+\begin{centering}
+  \includegraphics[height=0.6\linewidth]{vermont_path.eps}
   \caption{Placeholder text here}
   \label{tomato_SPDs}
   \end{centering}

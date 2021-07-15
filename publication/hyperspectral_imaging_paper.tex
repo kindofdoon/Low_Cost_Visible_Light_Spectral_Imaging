@@ -1,21 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%% asme2ej.tex %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Template for producing ASME-format journal articles using LaTeX    %
-% Written by   Harry H. Cheng, Professor and Director                %
-%              Integration Engineering Laboratory                    %
-%              Department of Mechanical and Aeronautical Engineering %
-%              University of California                              %
-%              Davis, CA 95616                                       %
-%              Tel: (530) 752-5020 (office)                          %
-%                   (530) 752-1028 (lab)                             %
-%              Fax: (530) 752-4158                                   %
-%              Email: hhcheng@ucdavis.edu                            %
-%              WWW:   http://iel.ucdavis.edu/people/cheng.html       %
-%              May 7, 1994                                           %
-% Modified: February 16, 2001 by Harry H. Cheng                      %
-% Modified: January  01, 2003 by Geoffrey R. Shiflett                %
-% Use at your own risk, send complaints to /dev/null                 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %%% use twocolumn and 10pt options with the asme2ej format
 \documentclass[twocolumn,10pt]{asme2ej}
 
@@ -27,22 +9,27 @@
 \usepackage{float}
 \usepackage{courier}
 \usepackage{xcolor}
+\usepackage{fancyhdr}
+
 
 \setlength{\parindent}{0pt}
 \newcommand{\id}{\hspace{6 mm}}
-%\newcommand{\hypotenuse}{$a^{2}+b^{2}$}
 
 
-\raggedbottom
+%\raggedbottom
 
 \title{Low-Cost Visible Light Spectral Imaging}
-
 
 \author{Daniel W. Dichter
     \affiliation{
 Independent Researcher\\
 Cambridge, Massachusetts, U.S.A.\\
-daniel.w.dichter@gmail.com
+daniel.w.dichter@gmail.com\\
+\\
+\color{red}
+\emph{\textbf{DRAFT: \today}}\\
+\color{black}
+
     }	
 }
 
@@ -50,11 +37,9 @@ daniel.w.dichter@gmail.com
 
 \maketitle
 
-\color{red}
-\emph{\textbf{DRAFT: \today}}\\
-\color{black}
+\pagestyle{fancy}
 
-\begin{abstract}{\it Spectral imaging is an emerging technology for measuring spectral power distributions (SPDs) of electromagnetic radiation over a 2D spatial domain. Within the visible light wavelength band, spectral imaging measures light and color with greater accuracy than conventional cameras. However, adoption of this technology is impeded by high cost and complexity. To address these barriers, a simple low-cost method is developed using unmodified commodity hardware --- primarily a DSLR camera and a series of narrow bandpass filters. The quantity of filters is strictly minimized to a total of seven, set by the dimensionality of SPDs, the spectral sensitivities of eyes and cameras, and commercial availability. Camera spectral sensitivity is measured using this same filter series, a color chart, a spectrophotometer, and noon daylight modeled as CIE D65. The RAW photo format is used to access unprocessed 14-bit sensor data. Independent SPD measurements from each color channel are fused as a sensitivity-weighted average for efficient and continuous interpolation between color channels with a bias toward maximal signal-to-noise ratio. Images are reconstructed from SPDs with standard methods. The method is demonstrated with a Canon 650D camera, ThorLabs 1'' narrow bandpass filters, an X-Rite ColorChecker chart, and a Spectro 1 spectrophotometer. Accuracy is verified by quantitative comparison against SPDs from direct measurement, and by qualitative assessment of reconstructed images. The total hardware cost is \$1,500 from scratch, or \$800 starting with a camera of known spectral sensitivity.
+\begin{abstract}{\it Spectral imaging is an emerging technology for measuring spectral power distributions (SPDs) of electromagnetic radiation over a 2D spatial domain. Within the visible light wavelength band, spectral imaging measures light and color with greater accuracy than conventional cameras. However, adoption of this technology is impeded by high cost and complexity. To address these barriers, a simple low-cost method is developed using unmodified commodity hardware --- primarily a DSLR camera and a set of narrow bandpass filters. The quantity of filters is strictly minimized to a total of seven, set by the dimensionality of SPDs, the spectral sensitivities of eyes and cameras, and commercial availability. Camera spectral sensitivity is measured using this same filter set, a color chart, a spectrophotometer, and noon daylight modeled as CIE D65. The RAW photo format is used to access unprocessed sensor data. Independent SPD measurements from each color channel are fused as a sensitivity-weighted average for efficient and continuous interpolation between color channels with a high signal-to-noise ratio. Images are reconstructed from SPDs with standard observer functions. The method is demonstrated with a Canon 650D camera, a set of ThorLabs 1'' narrow bandpass filters, an X-Rite ColorChecker chart, and a Spectro 1 spectrophotometer. Accuracy is verified by quantitative comparison against direct measurement. The total hardware cost is \$1,643 from scratch, or \$715 starting with a camera of known spectral sensitivity.
 }
 \end{abstract}
 
@@ -64,44 +49,46 @@ daniel.w.dichter@gmail.com
 
 % Motivate spectral imaging generally
 
-Color perception results from the interaction of an illuminant, optionally a reflective surface, and an observer. Humans are \textit{trichromats}, having three-dimensional color perception, over the visible light wavelength spectrum of 400 to 700 nm. Various animal species are \textit{dichromats}, \textit{tetrachromats}, and so on, with differing visible light wavelength limits. As discussed in Section \ref{curve_reconstruction}, human color perception is significantly rank-deficient even within its limited wavelength limits.
+Color perception results from the interaction of an illuminant, optionally a reflective surface, and an observer. Humans are trichromats, having three-dimensional color perception, over the visible light wavelength spectrum of 400 to 700 nm. Various animal species are dichromats, tetrachromats, and so on, with differing visible light wavelength limits. Human color perception is significantly rank-deficient even within its wavelength limits.
 
 % Overview of hyperspectral datacubes
 
-\id Whereas conventional digital photography produces a three-dimensional RGB color image, spectral imaging produces an N-dimensional \textit{hyperspectral datacube} (HSDC), typically with 10 $\leq$ N $\leq$ 60; wavelength channels replace color channels. Because HSDCs are informationally complete and observer independent, they provide a more accurate representation of color, and enable greater optionality in subsequent image processing.
+\id Whereas conventional digital photography produces a three-dimensional RGB color image, spectral imaging produces an N-dimensional hyperspectral datacube (HSDC), typically with 10 $\leq$ N $\leq$ 60; wavelength channels replace color channels. HSDCs are informationally complete and observer independent, providing a more accurate representation of color, and enabling greater optionality in subsequent image processing.
 
 % Spectral scanning
 
-\id \textit{Spectral scanning} is the simplest of several methods of generating HSDCs, wherein a 1-channel intensity image is captured at a series of regularly-spaced, narrow, non-overlapping wavelength bands; these images are subsequently ``stacked'' to form the final HSDC. Though spatially high-resolution relative to other methods, spectral scanning experiences ``spectral smearing'' if the subjects or sensor move during the image capture process, due to the characteristically large temporal distribution of the images. By comparison, various so-called ``single-shot'' methods use filtering techniques to capture the entire HSDC simultaneously, but at lower spatial resolution.
+\id Spectral scanning is the simplest of several methods of generating HSDCs, wherein a 1-channel intensity image is captured at a series of regularly-spaced, narrow, non-overlapping wavelength bands; these images are subsequently ``stacked'' to form the final HSDC. Though spatially high-resolution relative to other methods, spectral scanning experiences ``spectral smearing'' if the subjects or sensor move during the image capture process, due to the characteristically large temporal distribution of the images. By comparison, so-called ``single-shot'' methods use various diffraction techniques to capture the entire HSDC simultaneously, but at lower spatial resolution.
 
 % Cameras
 
-\id Commercially-available hyperspectral cameras typically cost in excess of \$15,000, whereas commodity consumer cameras such as DSLRs cost approximately \$500-1,500. DSLRs are not capable of spectral imaging as-is, but various investigators have demonstrated this capability nonetheless with various hardware and software methods. All such methods account for the non-linear trichromate spectral sensitivity of the camera's Bayer filter and image sensor.
+\id Commercial hyperspectral cameras typically cost at least \$15,000, whereas consumer cameras such as DSLRs cost as low as \$500-1,500. Consumer cameras are not capable of spectral imaging as-is, but various investigators have demonstrated this capability nonetheless with various hardware and software methods. All such methods account for the non-linear trichromate spectral sensitivity of the camera's Bayer filter and image sensor.
 
 \subsection{Related Work}
 
- Several authors have demonstrated spectral imaging with ordinary cameras.
+Several authors have demonstrated spectral imaging with consumer cameras.
 
-\id Cosentino \cite{Cosentino} used 12 bandpass filters and a consumer camera to produce HSDCs, comparing results favorably to a commercial spectral imaging system. The method requires modification of the camera, the filters are of non-uniform properties, and the quantity of filters is larger than necessary.
+\id Cosentino \cite{Cosentino} used 12 bandpass filters and a consumer camera to produce HSDCs, comparing results favorably to a commercial hyperspectral camera. The method requires modification of the camera, the filters are of non-uniform properties, and the quantity of filters is larger than necessary.
 
-\id Baek et al. \cite{Baek} developed a single-shot method using a custom prism objective to induce diffraction grating. Computation then separates the combined spatial and wavelength information by detection of ``spectral cues'' present ``only around object edges''. The requirement for the presence of edges limits the scenes that may be captured, and leads to a sensitive dependence between scene and system accuracy.
+\id Baek et al. \cite{Baek} developed a single-shot method using a custom prism objective for diffraction grating. Combined spatial and wavelength information is separated by detection of ``spectral cues'' present ``only around object edges''. The requirement for the presence of edges limits the scenes that may be captured, and leads to a sensitive dependence between scene and system accuracy.
 
-\id Habel et al. \cite{Habel} similarly developed a single-shot diffraction grating method. The custom objective is rather large and complex, and the reconstructed images are limited to 120 x 120 pixels.
+\id Habel et al. \cite{Habel} similarly developed a single-shot diffraction grating method. The custom objective is large and complex, and the reconstructed images are limited to 120 x 120 pixels.
 
-\id Oh et al. \cite{Oh} developed a method using three different digital cameras, exploiting small variations in camera sensitivities. An image registration process is used to align images between cameras using planarity. PCA is performed on a spectral database of Munsell colors to create a vector space for describing SPDs as low-dimension linear combinations.
+\id Oh et al. \cite{Oh} developed a method using three different synchronized digital cameras, exploiting small differences in their sensitivities. An image registration process is used to align images between cameras using planarity. PCA is performed on a spectral database of Munsell colors to create a low-dimension vector space for describing SPDs as linear combinations.
+
+\id The method described in this paper is believed to be novel in its low cost, high spatial resolution, and exclusive use of unmodified commodity hardware.
 
 \section{Methods}
 
 \subsection{Dimensionality of Reflectance Spectra}
 
-Parkkinen et al. \cite{Parkkinen} measured the reflectance spectra of 1,257 standard Munsell color chips over 400 to 700 nm. Noting that ``the components of a color spectrum are highly correlated'', Parkkinen et al. performed principal component analysis on these spectra, producing a set of reflectance eigenvectors. It was found that these reflectances could be reconstructed accurately as linear combinations of no more than eight eigenvectors, though the exact quantity depends on the required accuracy. This result implies that reflectance spectra are approximately eight-dimensional over the visible light spectrum, with a characteristic wavelength resolution of approximately (700 nm - 400 nm) / 8 = 37.5 nm.
+Parkkinen et al. \cite{Parkkinen} measured the reflectance spectra of 1,257 standard Munsell color chips over 400 to 700 nm. Noting that ``the components of a color spectrum are highly correlated'', the authors performed principal component analysis on these spectra, producing a set of reflectance eigenvectors. It was found that these spectra could be reconstructed as linear combinations of eight or fewer eigenvectors. This result implies that reflectance spectra are up to eight-dimensional over the visible light spectrum, with a characteristic wavelength resolution of approximately (700 nm - 400 nm) / 8 = 37.5 nm.
 
 \subsection{Curve Reconstruction}
 \label{curve_reconstruction}
 
 Sampling an SPD by spectral scanning with narrow bandpass filters produces a ``sparse'' sample; the value of the SPD is measured only at certain regular intervals. In the intervals between measurements, the value of the SPD is not measured, but can be accurately inferred due to the limited dimensionality of SPDs. This process is modeled as a curve reconstruction problem, i.e. given a sparse sampling of an unknown curve, reconstruct the curve by means of an appropriate interpolation scheme such that the reconstructed curve matches a theoretical measured curve.
 
-\id To determine the optimal filter quantity and interpolation scheme, two reflectance datasets are considered: the 8 eigenvectors developed by Parkkinen \cite{Parkkinen}, and the 24 spectra measured from an X-Rite ColorChecker Classic (2014) using a Spectro 1 spectrophotometer. The quality of the reconstruction is calculated as the residual sum of squares, multiplied by the wavelength resolution, divided by the quantity of samples in the dataset. This calculation is performed without an illuminant (i.e. directly on reflectance), and with CIE D65 representing typical noon daylight. This normalized error metric allows direct comparison between datasets. It is assumed that the filters are of sufficiently narrow bandwidth that they permit curve measurement exactly at their center wavelength.
+\id To determine the optimal filter quantity and interpolation scheme, two reflectance datasets are considered: the 8 eigenvectors developed by Parkkinen \cite{Parkkinen}, and the 24 reflectance spectra measured from an X-Rite ColorChecker Classic (2014) using a Spectro 1 spectrophotometer. The quality of the reconstruction is calculated as the residual sum of squares, multiplied by the wavelength resolution, divided by the quantity of samples in the dataset. This calculation is performed without an illuminant (i.e. directly on reflectance), and with CIE D65 representing typical noon daylight. This normalized error metric allows direct comparison between datasets. The filters are assumed to be of sufficiently narrow bandwidth that they measure at their exact center wavelength (CWL).
 
 \id Table \ref{table_reconstruction} organizes these results into four subsets with a common illuminant and reflectance. The follow observations are made:
 
@@ -119,25 +106,26 @@ Thus, 40 nm resolution and cubic interpolation are used for curve reconstruction
 
 \label{section_filters}
 
-Manufacturers of narrow bandpass filters include ThorLabs, Edmund Optics, and MidOpt. Within the visible light spectrum, filter center wavelength (CWL) is generally discretized as whole-number multiples of 10 nm, i.e. [400, 410, 420, ... 700] nm.
+Manufacturers of narrow bandpass filters include ThorLabs, Edmund Optics, and MidOpt. Within the visible light spectrum, CWL is generally discretized as whole-number multiples of 10 nm, i.e. [400, 410, 420, ... 700] nm.
 
-\id The centroid of the visible light spectrum may be defined at the wavelength corresponding to 50\% on the cumulative density function (CDF) of the CIE 2° tristimulus observer functions $\mathrm{\bar{x}}$, $\mathrm{\bar{y}}$, and $\mathrm{\bar{z}}$. Rounding to the nearest 10 nm per commercial availability, this centroid is 540 nm.
+\id The centroid of the visible light spectrum may be defined at the wavelength corresponding to 50\% on the cumulative density function (CDF) of the sum of the CIE 2° tristimulus observer functions [$\mathrm{\bar{x}}, \mathrm{\bar{y}}, \mathrm{\bar{z}}$]. \cite{CVRL} Rounding to the nearest 10 nm per commercial availability, this centroid is 540 nm.
 
-\id It can be shown that the wavelength range of 420 to 660 nm encompasses 97\% of the area under the CIE 2° and 10° observer functions. This range is also evenly divisible into 40 nm increments, and intersects the centroid of 540 nm.
+\id It can be shown that the wavelength range of 420 to 660 nm encompasses 97\% of the area under the CIE 2° and 10° observer functions. \cite{CVRL} This range is also evenly divisible into 40 nm increments, and intersects the centroid of 540 nm.
 
-\id The final specification is the full-width half max (FWHM), or bandwidth. As discussed in Section \ref{curve_reconstruction}, it is desirable to minimize FWHM so that measurements are wavelength-accurate. The associated reduction in overall transmission can be compensated for by increasing the brightness of the exposure, as discussed in Section \ref{photographic}.
+\id The final specification is the full-width half max (FWHM), or bandwidth. As discussed in Section \ref{curve_reconstruction}, it is desirable to minimize FWHM so that measurements are wavelength-accurate to the CWL. The reduction in overall transmission associated with a low FWHM can be compensated by increasing the exposure, as discussed in Section \ref{photographic}.
 
-\id The set of filters chosen are shown in Figure \ref{thorlabs_filter_transmission_spectra}, and have the following properties:\\
+\id The set of filters chosen are shown in Figures \ref{thorlabs_filter_transmission_spectra} and \ref{canon}, and have the following properties:\\
 
 \begin{tabular}{l | l}
 %\hline
 Quantity & 7 \\
 Manufacturer & ThorLabs \\
-CWL & 420 to 660 nm in 40 nm increments \\
-FWHM & 10 nm each \\
+CWL & 420 to 660 nm \\
+CWL Spacing & 40 nm \\
+FWHM & 10 nm \\
 Part Numbers & FB420-10, FB460-10, etc. \\
 Diameter & 1'' \\
-Cost, Total & \$700 \\
+Cost, Total & \$686 (+\$29 case) \\
 %\hline
 \end{tabular}
 
@@ -152,33 +140,34 @@ Cost, Total & \$700 \\
 
 \label{Camera_Spectral_Sensitivity}
 
-Camera spectral sensitivity is calculated by photographing a color chart of known reflectance through each filter under cloudless noon daylight modeled as CIE D65. Each color swatch produces a unique SPD modeled as the element-wise product of its spectral reflectance with the CIE D65 illuminant. An X-Rite ColorChecker was used, containing 24 swatches that mimic everyday spectral reflectances. The spectral reflectances were measured using a Spectro 1 spectrophotometer.
+Camera spectral sensitivity is calculated by photographing a ColorChecker chart through each filter under clear (cloudless) noon daylight modeled as CIE D65. Images were captured on 2021-02-21 at 12:22 pm in an open field in Cambridge, Massachusetts. Each swatch produces a unique SPD modeled as the element-wise product of its spectral reflectance with the CIE D65 illuminant. \cite{CVRL} Reflectance spectra were measured using a Spectro 1 spectrophotometer with a domain of 400 to 700 nm and a resolution of 10 nm.
 
 \id Assuming a linear response between quantity of photons incident on the sensor during an exposure, and the measured RAW value, sensitivity may be described generally as:\\
 
 $\mathrm{ Sensitivity = S = \dfrac{Value \ Measured}{Value \ Actual} } = \dfrac{V_M}{V_A}$ \\
 
-$V_A = \mathlarger{\sum_{\lambda}} I(\lambda) R(\lambda) T(\lambda)$ \\
+$V_A = \mathlarger{\sum_{\lambda}} I(\lambda) \odot R(\lambda) \odot T(\lambda)$ \\
 
- with: \\
+with: \\
 
 \begin{tabular}{l | l}
 $\lambda$ & Wavelength \\
-I & Illuminant\\
-R & Reflectance \\
-T & Transmission \\
+I & Scene illuminant\\
+R & Swatch reflectance \\
+T & Filter transmission \\
+$\odot$ & Element-wise multiplication \\
 \end{tabular} \\
 
-$V_M$ is calculated as the mode of the values inside a square inset slightly from the swatch borders.
+$V_M$ is calculated as the mode of the RAW values inside a square inset slightly from the swatch perimeter.
 
-\id Theoretically, sensitivity for all color channels and wavelengths can be calculated from any single swatch, as shown in Figure \ref{canon_650d_sensitivity}. These per-swatch sensitivity curves are fused as a weighted average using $V_M$. This has the effect of weighting calculated sensitivities in proportion to their signal-to-noise ratio (SNR).
+\id Sensitivity for all color channels and wavelengths can be calculated from any single swatch, as shown in Figure \ref{canon_650d_sensitivity}. These per-swatch sensitivity curves are fused as a weighted average using $V_M$. This has the effect of weighting calculated sensitivities in proportion to their signal-to-noise ratio.
 
-\id The final result is a set of three sensitivity curves, $S_R(\lambda), \ S_G(\lambda), \ S_B(\lambda)$. As shown in Figure \ref{camera_spectral_sensitivities}, this result is consistent with values from literature for similar Canon cameras. \cite{Jiang}
+\id The final result is a set of three sensitivity curves, $\left[ S_R(\lambda), \ S_G(\lambda), \ S_B(\lambda) \right]$. As shown in Figure \ref{camera_spectral_sensitivities}, this result is consistent with values from literature for similar Canon cameras. \cite{Jiang}
 
 \begin{figure}
 \centering
 \includegraphics[width=0.5\textwidth]{canon_650d_sensitivity.eps}
-\caption{Trichromate spectral sensitivity of Canon 650D camera from ColorChecker under D65 illuminant. Faint colored lines correspond to individual swatches; solid black lines correspond to per-wavelength averages for all swatches.}
+\caption{Trichromate spectral sensitivity of Canon 650D camera from ColorChecker under D65 illuminant. Faint colored lines correspond to individual swatches; solid black lines correspond to weighted averages for all swatches.}
 \label{canon_650d_sensitivity}
 \end{figure}
 
@@ -192,22 +181,22 @@ $V_M$ is calculated as the mode of the values inside a square inset slightly fro
 \subsection{Photographic Aspects}
 \label{photographic}
 
- A prime lens, tripod, and remote shutter are used to minimize movement of the camera while capturing the photo stack. Because filter cost is proportional to filter area, the choice of lens is thus a significant means of cost reduction. The measurement of interest is the diameter of the objective at the outer end of the lens. For consumer-grade Canon EF lenses, this ranges from approximately 20 to 60 mm. The theoretical filter cost at these extremes differs by nearly an order of magnitude; $60^2 / 20^2 = 9$.
+A prime lens, tripod, quick release plate, and remote shutter are used to minimize movement of the camera while capturing the photo stack. Because filter cost is proportional to filter area, the choice of lens is a significant means of cost reduction. The measurement of interest is the diameter of the objective at the outer end of the lens, as it sets the minimum filter diameter. For consumer-grade Canon EF lenses, this ranges from approximately 20 to 60 mm. The theoretical filter cost at these extremes differs by nearly an order of magnitude; $60^2 / 20^2 = 9$.
 
-\id The lens selected has an outer objective diameter of 20 mm, a focal length of 40 mm, and an aperture of f/2.8. It is shown in Figure \ref{canon_40_mm_prime_lens}.
+\id The lens selected has an outer objective diameter of 20 mm, a focal length of 40 mm, and an aperture of f/2.8. It is shown in Figure \ref{canon}.
 
-\id The filters discussed in Section \ref{section_filters} are unthreaded, and used by resting them against the camera lens by hand. The lens is designed such that the glass optics are recessed slightly from the exterior body against which the lenses rest. The filters are stored in a case in order of ascending wavelength, and cycled through in sequence to capture the photo stack.
+\id The filters discussed in Section \ref{section_filters} are unthreaded, and used by resting them against the camera lens by hand. The lens is designed such that its glass optics are recessed from the exterior case against which the lenses rest. The filters are stored in a case in order of ascending wavelength, and cycled through in sequence manually to capture the photo stack.
 
-\id The fastest aperture of f/2.8 is used. Depending on the amont of light within the scene, the ISO ranges from 100-400, and the shutter speed ranges from 1/4 to 1/500 of a second. These bright exposures are required to compensate for the low transmission of the filters. The settings are collectively adjusted to ``expose to the right'', i.e. fully utilize the available set of values without saturating the upper limit, thereby maximizing the signal-to-noise ratio in the measured values.
+\id Depending on the amount of light within the scene, ISO ranges from 100-400, and shutter speed ranges from 1/4 to 1/500 of a second. Bright exposures are required to compensate for the low transmission of the filters. The settings are collectively adjusted to ``expose to the right'', i.e. fully utilize the available set of values without saturating the upper limit, thereby maximizing the signal-to-noise ratio in the measured values.
 
 \begin{figure}
 \centering
 \includegraphics[width=0.45\textwidth]{IMG_20210712_212507_GIMP.jpg}
-\caption{Placeholder text}
+\caption{Canon 650D camera with 40 mm prime EF lens, and set of ThorLabs narrow bandpass filters.}
 \label{canon}
 \end{figure}
 
-The open-source \texttt{dcraw} utility is used to extract RAW values stored in the .CR2 file format. The modifier string \texttt{-D -4 -j -t 0} specifies that the extracted RAW values are unprocessed sensor measurements:\\
+\id The open-source \texttt{dcraw} utility is used to extract RAW values stored in the .CR2 file format. The modifier string \texttt{-D -4 -j -t 0} specifies that the extracted RAW values are unprocessed sensor measurements:\\
 
 \begin{tabular}{l | l}
 -D & No value scaling \\
@@ -216,7 +205,7 @@ The open-source \texttt{dcraw} utility is used to extract RAW values stored in t
 -t 0 & No image rotation \\
 \end{tabular} \\
 
- The RAW sensor measurements are then demosaiced into R, G, B color channels with a Bayer filter pattern of \texttt{rggb}.
+The RAW sensor measurements are then demosaiced into R, G, B color channels with a Bayer filter pattern of \texttt{rggb}.
 
 \subsection{SPD Measurements from RAW Photo Values}
 
@@ -228,7 +217,7 @@ Assuming a linear sensor response, $V_M \propto P$, with $P$ denoting the RAW ph
 
  $SPD = V_A = \dfrac{P}{ST}$ \\
 
-Accounting for the non-zero bandwidth of the filters, the denominator $ST$ is most accurately and generally expressed as $S(\lambda) \cdot T(\lambda)$, rather than $S(\lambda=CWL)*T(\lambda=CWL)$.
+The denominator $ST$ is most accurately and generally expressed as $S(\lambda) \cdot T(\lambda)$, rather than $S(\lambda=CWL) T(\lambda=CWL)$, i.e. a dot product over the wavelength domain, rather than a scalar product at the CWL.
 
 \id At an arbitrary pixel and CWL, each color channel produces an independent SPD measurement, collectively given as: \\
 
@@ -238,60 +227,73 @@ These measurements are theoretically equal, but in practice differ as a result o
 
 $\overline{SPD} = \dfrac{1}{S_R+S_G+S_B} \left( \dfrac{P_R S_R}{S_R \cdot T} + \dfrac{P_G S_G}{S_G \cdot T} + \dfrac{P_B S_B}{S_B \cdot T} \right)$\\
 
-%with $\odot$ denoting element-wise product and $\cdot$ denoting dot product. This simplifies to:\\
+Calculating $\overline{SPD}$ as a sensitivity-weighted average continuously interpolates between color channels as a function of wavelength. Since $S_R+S_G+S_B > 0$ for all $\lambda$, divide-by-zero is precluded. This formulation generalizes spatially by using matrices in place of scalars for $P$.
 
-% $\overline{SPD} = \dfrac{P_R+P_G+P_B}{T(S_R+S_G+S_B)} =  \dfrac{\mathlarger{\sum_{R,G,B}}P}{T \mathlarger{\sum_{R,G,B}}S}$ \\
+\id The HSDC is first calculated in a sparse fashion, only at the CWLs of the filters. The full (i.e. non-sparse) HSDC is then calculated by 3D cubic interpolation in the wavelength domain between the filter CWLs per Section \ref{curve_reconstruction}.
 
-Calculating $\overline{SPD}$ as a sensitivity-weighted average continuously interpolates between color channels as a function of wavelength, without discontinuities or switching behavior. Since $S_R+S_G+S_B > 0$ for all $\lambda$, divide-by-zero is precluded. This formulation generalizes efficiently from a 0D pixel to a 2D channel simply by using matrices in place of scalars for $P$.
-
-\id The HSDC is first calculated in a sparse fashion, only at the CWLs of the filters. The full (i.e. non-sparse) HSDC is then calculated by means of 3D cubic interpolation in the wavelength domain between the filter CWLs, as discussed in Section \ref{curve_reconstruction}.
-
+\section{Results}
 \subsection{Validation}
+\label{validation}
 
-The system is validated by comparing measured SPDs from camera vs. spectrophotometer, taken as ground truth. The latter is modeled as $I(\lambda)R(\lambda)$, the element-wise product of the scene illuminant, taken as CIE D65, with the reflectance of the swatch. Results are shown in Figure \ref{SPD_validation}, showing good agreement. Error occurs mostly at high brightness and near the limits of the visible light spectrum, where sensitivity is lowest.
+The method is validated by comparing ColorChecker SPDs, as measured by camera vs. a spectrophotometer, with the latter taken as ground truth. Because the two sets of curves, $SPD_{camera}$ and $SPD_{spectrophotometer}$, are non-dimensional, their ranges are aligned with a single scalar gain for comparative purposes, such that the sum of the residuals is zero. This scalar gain $\alpha$ is found by the bisection method such that:\\
+
+$\mathlarger{ \sum_{\lambda}} ( \alpha SPD_{camera}- SPD_{spectrophotometer} )=0$. \\
+
+Colors are generated from these SPDs according to standard tristimulus equations: \cite{CVRL} \cite{Lindbloom}\\
+
+$X = \dfrac{1}{N} \mathlarger{ \sum_{\lambda}} \hspace{1 mm} \bar{x} \odot SPD(\lambda) \Delta \lambda$\\
+$Y = \dfrac{1}{N} \mathlarger{ \sum_{\lambda}} \hspace{1 mm} \bar{y} \odot SPD(\lambda) \Delta \lambda$\\
+$Z = \dfrac{1}{N} \mathlarger{ \sum_{\lambda}} \hspace{1 mm} \bar{z} \odot SPD(\lambda) \Delta \lambda$\\
+$N = \mathlarger{ \sum_{\lambda}} \hspace{1 mm} \bar{y} \odot I(\lambda) \Delta \lambda$\\
+
+The specific formulation for $SPD(\lambda)$ is given by:\\
+
+\begin{tabular}{l l l}
+$SPD_{camera}$ & $= SPD(\lambda)$ & (Emissive case) \\
+$SPD_{spectrophotometer}$ & $= R(\lambda) \odot I(\lambda)$ & (Reflective case) \\
+\end{tabular}\\
+
+RGB and Lab colors are then calculated from these XYZ colors using MATLAB's \texttt{xyz2rgb} and \texttt{xyz2lab} functions with D65 specified as the white point. Color difference $\Delta E$ is calculated using CIEDE2000, with 2.3 $\Delta E$ taken as 1.0 JND, or just noticeable difference. \cite{Sharma}
+
+\id Results are shown in Figure \ref{SPD_validation}. The color error for the full set is 1.08 $\pm$ 0.65 JND, indicating that color differences vary from imperceptible to just noticeable depending on the swatch. The primary outlier is \#19 white, which shows a good match in terms of normalized distribution, but a poor match in magnitude and thus brightness. Being that this is the brightest color in the set, this may be attributable to a breakdown of the sensor linearity assumption.
 
 \subsection{Images from HSDCs}
 
- RGB images can be generated from HSDCs using standard CIE observer functions that relate an SPD to an XYZ tristimulus, which may then be converted to an RGB color for display. In the latter step, an \emph{a priori} value scaling method is needed to translate the non-dimensional colors from $\overline{SPD}$ to a dimensional color space. A robust general-purpose method is to scale the image's value limits by specifying two CDF pairs; for example:\\
+RGB images are generated from HSDCs using the equations in Section \ref{validation}. Since $N$ is undefined in the emissive case, a more general scaling method is necessary to translate non-dimensional SPDs to the dimensional color space of RGB. Accordingly, the image's value CDF is calculated and rescaled such that the image fully utilizes the color space with negligible saturation at both extreme ends. This is implemented with MATLAB's \texttt{imadjust}, and stated using typical parameters as:\\
 
-Value(CDF = 1\%) = 5\%\\
-Value(CDF = 99\%) = 95\%\\
-
-However, observer functions have inherent limitations as the sole basis for generating RGB images from HSDCs. This is because they model independent single-color perception only, and do not account for the the mutual influence of simultaneously-perceived colors. This deficiency can be seen in nontrivial scenes where the luminance spans more orders of magnitude than the color space, or the illuminant is significantly non-spectrally uniform, i.e. colored; examples include sunsets and indoor incandescent lighting. Literature is presently lacking in research and methods for generating perceptually realistic images from nontrivial HSDCs.
-
-\section{Discussion}
-
-Placeholder text here
+\begin{tabular}{l l}
+Value(CDF = 1\%) & = 5\%\\
+Value(CDF = 99\%) & = 95\%\\
+\end{tabular}\\
 
 \clearpage
 
 \onecolumn
 
-\section{Results}
+\subsection{Reconstructed Images}
 
 \begin{figure}[H]
 \begin{centering}
   \includegraphics[height=0.55\linewidth]{colorchecker.png}
-  \caption{Reconstructed image of ColorChecker chart under noon daylight. Mesh sample points overlaid as black-and-white circles.}
+  \caption{Reconstructed image of ColorChecker chart under noon daylight.}
   \label{colorchecker_mesh}
   \end{centering}
 \end{figure}
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.6\linewidth]{colorchecker.eps}
-  \caption{SPD curves at mesh points in Figure \ref{colorchecker_mesh}.}
+  \includegraphics[height=0.6\linewidth]{colorchecker_SPDs.eps}
+  \caption{SPD and reconstructed color at center of each swatch in Figure \ref{colorchecker_mesh}.}
   \label{colorchecker_SPDs}
     \end{centering}
 \end{figure}
 
 \clearpage
 
-
 \begin{figure}[H]
 \begin{centering}
   \includegraphics[height=0.55\linewidth]{broccoli_bottle_tomato.png}
-  \caption{Placeholder text here}
+  \caption{Reconstructed image of still life under evening horizon light.}
   \label{tomato_mesh}
   \end{centering}
 \end{figure}
@@ -299,7 +301,7 @@ Placeholder text here
 \begin{figure}[H]
 \begin{centering}
   \includegraphics[height=0.6\linewidth]{broccoli_bottle_tomato.eps}
-  \caption{Placeholder text here}
+  \caption{SPDs and reconstructed colors sampled at a 70-node square mesh for the scene in Figure \ref{tomato_mesh}.}
   \label{tomato_SPDs}
   \end{centering}
 \end{figure}
@@ -309,42 +311,111 @@ Placeholder text here
 \begin{figure}[H]
 \begin{centering}
   \includegraphics[height=0.55\linewidth]{vermont_path.png}
-  \caption{Placeholder text here}
-  \label{tomato_mesh}
+  \caption{Reconstructed image of Vermont landscape at sunset.}
+  \label{path_mesh}
   \end{centering}
 \end{figure}
 
 \begin{figure}[H]
 \begin{centering}
   \includegraphics[height=0.6\linewidth]{vermont_path.eps}
-  \caption{Placeholder text here}
-  \label{tomato_SPDs}
+  \caption{SPDs and reconstructed colors sampled at a 70-node square mesh for the scene in Figure \ref{path_mesh}.}
+  \label{path_SPDs}
   \end{centering}
 \end{figure}
 
 \clearpage
 
-\section{Appendix}
-\label{appendix}
+\begin{figure}[H]
+\begin{centering}
+  \includegraphics[height=0.55\linewidth]{truck.png}
+  \caption{Reconstructed image of industrial scene at sunset.}
+  \label{truck_mesh}
+  \end{centering}
+\end{figure}
+
+\begin{figure}[H]
+\begin{centering}
+  \includegraphics[height=0.6\linewidth]{truck_SPDs.eps}
+  \caption{SPDs and reconstructed colors sampled at a 70-node square mesh for the scene in Figure \ref{truck_mesh}.}
+  \label{path_SPDs}
+  \end{centering}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\twocolumn
+
+\section{Discussion}
+
+This paper demonstrates a method for visible light spectral imaging at less than 1/10 the cost of a commercial hyperspectral camera, primarily using a consumer camera and set of narrow bandpass filters. It employs sparse sampling and curve reconstruction to measure SPDs. Its results in terms of SPDs and reconstructed colors compare favorably to direct ground truth measurement.
+
+\id Observer functions $[ \bar{x}, \bar{y}, \bar{z} ]$ have inherent limitations as the sole basis for generating RGB images from HSDCs. They model independent single-color perception only, and do not account for the the mutual influence of simultaneously-perceived colors. This deficiency is apparent in nontrivial scenes where the luminance spans several orders of magnitude, or the illuminant is significantly non-spectrally uniform, i.e. colored; examples include sunsets and indoor incandescent lighting. Literature is lacking in general numerical methods for describing the mutual perceptual influence of colors on each other.
+
+\id Future work may include:
+
+\begin{enumerate}
+\item Refining the underlying assumptions and equations
+\item Quantifying the mutual perceptual influence of colors
+\item Reducing the diameter of the lens objective and filters 
+\item Improving and/or automating the filter cycling
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ \begin{thebibliography}{12}
+
+\bibitem{Baek}
+{Baek, S.-H., Kim, I., Gutierrez, D., \& Kim, M. H. (2017). \emph{Compact Single-Shot Hyperspectral Imaging Using a Prism.} ACM Transactions on Graphics, 36(6), 1–12. https://doi.org/10.1145/3130800.3130896}
+
+\bibitem{Cosentino}
+{Cosentino, A. (2015). \emph{Multispectral Imaging System Using 12 Interference Filters for Mapping Pigments.} Conservar Património, 21, 25–38. https://doi.org/10.14568/cp2015005}
+
+\bibitem{CVRL}
+{Colour \& Vision Research Laboratory (n.d.). \emph{CVRL Main.} http://cvrl.ioo.ucl.ac.uk/index.htm.}
+
+\bibitem{Habel}
+{Habel, R., Kudenov, M., \& Wimmer, M. (2012). \emph{Practical Spectral Photography.} Computer Graphics Forum, 31(2pt2), 449–458. https://doi.org/10.1111/j.1467-8659.2012.03024.x}
+
+\bibitem{Jiang}
+{Jiang, J., Liu, D., Gu, J., \& Susstrunk, S. (2013). \emph{What is the Space of Spectral Sensitivity Functions for Digital Color Cameras?} 2013 IEEE Workshop on Applications of Computer Vision (WACV). https://doi.org/10.1109/wacv.2013.6475015}
+
+\bibitem{Lindbloom}
+{Lindbloom, B. J. (n.d.). \emph{Spectral Computation of XYZ.} http://www.brucelindbloom.com/index.html?Eqn\_Spect\_to\_XYZ.html.}
+
+\bibitem{Oh}
+{Oh, S. W., Brown, M. S., Pollefeys, M., \& Kim, S. J. (2016). \emph{Do It Yourself Hyperspectral Imaging with Everyday Digital Cameras.} 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). https://doi.org/10.1109/cvpr.2016.270}
+
+ \bibitem{Parkkinen} 
+ {Parkkinen, J. P. S., Hallikainen, J., \& Jaaskelainen, T. (1989, February 1). \emph{Characteristic Spectra of Munsell Colors}. JOSA A. https://www.osapublishing.org/josaa/abstract.cfm?uri=josaa-6-2-318.}
+
+\bibitem{Sharma}
+{Sharma, G. (2017). \emph{Digital Color Imaging Handbook}. CRC Press.}
+
+\end{thebibliography}
+ 
+ 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage 
+\onecolumn
+\section{Appendices}
 
 \begin{figure}[H]
 \begin{centering}
 \includegraphics[width=0.90\textwidth]{colorchecker_reconstruction.eps}
-\caption{Curve reconstruction of simulated SPDs from ColorChecker measured reflectance spectra under D65 illuminant, with cubic interpolation, and 7 samples at 40 nm starting at 420 nm. All plots are scaled BLANK to BLANK.}
+\caption{Curve reconstruction of simulated non-dimensional ColorChecker SPDs, modeled as measured reflectance spectra under D65 illuminant, with cubic interpolation, 7 samples, 40 nm resolution, over 420 to 660 nm.}
 \label{colorchecker_reconstruction}
 \end{centering}
 \end{figure}
 
-
-
 \begin{figure}[H]
 \centering
   \includegraphics[width=0.90\linewidth]{SPD_validation.eps}
-  \caption{Comparison of SPDs from camera (red) and from direct measurement (black) for the ColorChecker dataset. Filter CWLs are shown as gray vertical lines. Plots are scaled 400 to 700 nm along x, and non-dimensional along y. A single scalar gain is applied to align the magnitudes of the two sets of curves.}
+  \caption{Comparison of SPDs and colors as measured by spectrophotometer (solid, left) and camera (dashed, right). A single scalar gain is applied to align the magnitudes of the two sets of curves. Color error in CIEDE2000 is reported for each swatch.}
   \label{SPD_validation}
 \end{figure}
-
-
 
 
 \begin{table}[t]
@@ -382,35 +453,40 @@ ColorChecker & D65 & 40 & linear & 0.039  \\
 ColorChecker & D65 & 40 & spline & 0.055  \\
 \hline
 \end{tabular}
-\caption{Figure and table captions do not end with a period}
+\caption{Curve reconstruction quality as a function of dataset, illuminant, resolution, and interpolation method.}
 \label{table_reconstruction}
 \end{center}
 \end{table}
 
-\clearpage
-
- \begin{thebibliography}{12}
-
- \bibitem{Parkkinen} 
- {Parkkinen, J. \& Hallikainen, J. \& Jääskeläinen, Timo. (1989). Characteristic spectra of Munsell chips. Journal of The Optical Society of America A-optics Image Science and Vision - J OPT SOC AM A-OPT IMAGE SCI. 6. 10.1364/JOSAA.6.000318.}
- 
-\bibitem{Jiang}
-{J. Jiang, D. Liu, J. Gu and S. Süsstrunk, "What is the space of spectral sensitivity functions for digital color cameras?," 2013 IEEE Workshop on Applications of Computer Vision (WACV), 2013, pp. 168-179, doi: 10.1109/WACV.2013.6475015.}
-
-\bibitem{Cosentino}
-{Cosentino, Antonino. (2015). Multispectral Imaging of Pigments with a digital camera and 12 interferential filters. e-Preservation Science. 12. 1-7.}
-
-\bibitem{Oh}
-{S. W. Oh, M. S. Brown, M. Pollefeys and S. J. Kim, "Do It Yourself Hyperspectral Imaging with Everyday Digital Cameras," 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016, pp. 2461-2469, doi: 10.1109/CVPR.2016.270.}
-
-\bibitem{Baek}
-{Seung-Hwan Baek, Incheol Kim, Diego Gutierrez, and Min H. Kim. 2017. Compact single-shot hyperspectral imaging using a prism. ACM Trans. Graph. 36, 6, Article 217 (November 2017), 12 pages. DOI: https://doi.org/10.1145/3130800.3130896}
-
-\bibitem{Habel}
-{Habel, R. et al. “Practical Spectral Photography.” Computer Graphics Forum 31 (2012): n. pag.}
-
- \end{thebibliography}
- 
- 
+\begin{table}[t]
+\begin{center}
+\begin{tabular}{l l r}
+\textbf{Item} & \textbf{Vendor} & \textbf{Cost, \$} \\
+\hline
+Spectro 1 spectrophotometer       & Variable, Inc. &   325 \\
+Canon 650D camera                 & eBay &             300 \\
+Canon EF 40 mm prime lens         & Canon &            150 \\
+ThorLabs FB420-10 1'' filter      & ThorLabs &         108 \\
+ThorLabs FB460-10 1'' filter      & ThorLabs &         102 \\
+ThorLabs FB500-10 1'' filter      & ThorLabs &         100 \\
+ThorLabs FB540-10 1'' filter      & ThorLabs &         94  \\
+ThorLabs FB580-10 1'' filter      & ThorLabs &         94  \\
+ThorLabs FB620-10 1'' filter      & ThorLabs &         94  \\
+ThorLabs FB660-10 1'' filter      & ThorLabs &         94  \\
+ThorLabs BX0110 filter case  & ThorLabs &         29  \\
+X-Rite ColorChecker Classic chart         & B\&H Photo Video & 80  \\
+Velbon VideoMate II tripod        & eBay &             33  \\
+Velbon QB-5RL quick release plate & Amazon &           17  \\
+Neewer remote shutter             & Amazon &           23  \\
+\hline
+\textbf{Total, all items} & & 1,643 \\
+\textbf{Total, filters only} & & 715 \\
+\end{tabular}
+\caption{Bill of materials.}
+\label{materials}
+\end{center}
+\end{table}
 
 \end{document}
+
+

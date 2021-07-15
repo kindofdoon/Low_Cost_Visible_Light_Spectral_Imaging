@@ -507,7 +507,7 @@
       \else
         \@restonecolfalse\newpage
       \fi
-      \thispagestyle{empty}%
+      \thispagestyle{plain}%
       \if@compatibility
         \setcounter{page}{0}
       \else
@@ -568,7 +568,7 @@
 \def\@endpart{\vfil\newpage
               \if@twoside
                 \hbox{}%
-                \thispagestyle{empty}%
+                \thispagestyle{plain}%
                 \newpage
               \fi
               \if@tempswa

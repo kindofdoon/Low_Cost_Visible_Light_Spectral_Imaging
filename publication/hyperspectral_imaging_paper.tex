@@ -102,7 +102,7 @@ Sampling an SPD by spectral scanning with narrow bandpass filters produces a ``s
 
 Thus, 40 nm resolution and cubic interpolation are used for curve reconstruction. Representative plots are shown in Figure \ref{colorchecker_reconstruction}.
 
-\subsection{Filter Set Selection}
+\subsection{Filter Set Design}
 
 \label{section_filters}
 
@@ -167,7 +167,7 @@ $V_M$ is calculated as the mode of the RAW values inside a square inset slightly
 \begin{figure}
 \centering
 \includegraphics[width=0.5\textwidth]{canon_650d_sensitivity.eps}
-\caption{Trichromate spectral sensitivity of Canon 650D camera from ColorChecker under D65 illuminant. Faint colored lines correspond to individual swatches; solid black lines correspond to weighted averages for all swatches.}
+\caption{Non-dimensional trichromate spectral sensitivity of Canon 650D camera from ColorChecker under D65 illuminant. Faint colored lines correspond to individual swatches; solid black lines correspond to weighted averages for all swatches.}
 \label{canon_650d_sensitivity}
 \end{figure}
 
@@ -207,7 +207,7 @@ A prime lens, tripod, quick release plate, and remote shutter are used to minimi
 
 The RAW sensor measurements are then demosaiced into R, G, B color channels with a Bayer filter pattern of \texttt{rggb}.
 
-\subsection{SPD Measurements from RAW Photo Values}
+\subsection{SPDs from RAW Photos}
 
  By rearranging the general expression of sensitivity in Section \ref{Camera_Spectral_Sensitivity}: \\
 
@@ -274,7 +274,7 @@ Value(CDF = 99\%) & = 95\%\\
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.55\linewidth]{colorchecker.png}
+  \includegraphics[height=0.55\linewidth]{colorchecker.jpg}
   \caption{Reconstructed image of ColorChecker chart under noon daylight.}
   \label{colorchecker_mesh}
   \end{centering}
@@ -292,7 +292,7 @@ Value(CDF = 99\%) & = 95\%\\
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.55\linewidth]{broccoli_bottle_tomato.png}
+  \includegraphics[height=0.55\linewidth]{broccoli_bottle_tomato.jpg}
   \caption{Reconstructed image of still life under evening horizon light.}
   \label{tomato_mesh}
   \end{centering}
@@ -310,7 +310,7 @@ Value(CDF = 99\%) & = 95\%\\
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.55\linewidth]{vermont_path.png}
+  \includegraphics[height=0.55\linewidth]{vermont_path.jpg}
   \caption{Reconstructed image of Vermont landscape at sunset.}
   \label{path_mesh}
   \end{centering}
@@ -328,7 +328,7 @@ Value(CDF = 99\%) & = 95\%\\
 
 \begin{figure}[H]
 \begin{centering}
-  \includegraphics[height=0.55\linewidth]{truck.png}
+  \includegraphics[height=0.55\linewidth]{truck.jpg}
   \caption{Reconstructed image of industrial scene at sunset.}
   \label{truck_mesh}
   \end{centering}

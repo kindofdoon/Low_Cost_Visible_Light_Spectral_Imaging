@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (MiKTeX 21.2) (preloaded format=pdflatex 2021.2.21)  15 JUL 2021 02:56
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (MiKTeX 21.2) (preloaded format=pdflatex 2021.2.21)  15 JUL 2021 08:29
 entering extended mode
 **./hyperspectral_imaging_paper.tex
 (hyperspectral_imaging_paper.tex
@@ -437,12 +437,12 @@ Underfull \hbox (badness 10000) in paragraph at lines 153--160
  []
 
 Package epstopdf Info: Source file: <canon_650d_sensitivity.eps>
-(epstopdf)                    date: 2021-06-20 18:36:56
-(epstopdf)                    size: 40817 bytes
+(epstopdf)                    date: 2021-07-15 08:27:37
+(epstopdf)                    size: 39644 bytes
 (epstopdf)             Output file: <canon_650d_sensitivity-eps-converted-to.pd
 f>
-(epstopdf)                    date: 2021-06-20 18:37:08
-(epstopdf)                    size: 9792 bytes
+(epstopdf)                    date: 2021-07-15 08:28:29
+(epstopdf)                    size: 9346 bytes
 (epstopdf)             Command: <epstopdf --outfile=canon_650d_sensitivity-eps-
 converted-to.pdf canon_650d_sensitivity.eps>
 (epstopdf)             \includegraphics on input line 169.
@@ -464,12 +464,12 @@ Overfull \hbox (6.14288pt too wide) in paragraph at lines 169--170
  []
 
 Package epstopdf Info: Source file: <camera_spectral_sensitivities.eps>
-(epstopdf)                    date: 2021-06-20 18:33:21
-(epstopdf)                    size: 76575 bytes
+(epstopdf)                    date: 2021-07-15 08:28:18
+(epstopdf)                    size: 75782 bytes
 (epstopdf)             Output file: <camera_spectral_sensitivities-eps-converte
 d-to.pdf>
-(epstopdf)                    date: 2021-06-20 18:33:25
-(epstopdf)                    size: 15980 bytes
+(epstopdf)                    date: 2021-07-15 08:28:30
+(epstopdf)                    size: 15640 bytes
 (epstopdf)             Command: <epstopdf --outfile=camera_spectral_sensitiviti
 es-eps-converted-to.pdf camera_spectral_sensitivities.eps>
 (epstopdf)             \includegraphics on input line 176.
@@ -640,11 +640,11 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 [5
 
 ]
-<colorchecker.png, id=49, 2007.5pt x 1340.00626pt>
-File: colorchecker.png Graphic file (type png)
-<use colorchecker.png>
-Package pdftex.def Info: colorchecker.png  used on input line 277.
-(pdftex.def)             Requested size: 407.89496pt x 272.27896pt.
+<colorchecker.jpg, id=49, 1505.625pt x 1005.00468pt>
+File: colorchecker.jpg Graphic file (type jpg)
+<use colorchecker.jpg>
+Package pdftex.def Info: colorchecker.jpg  used on input line 277.
+(pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <colorchecker_SPDs.eps>
 (epstopdf)                    date: 2021-07-15 02:37:12
 (epstopdf)                    size: 41281 bytes
@@ -676,12 +676,12 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 [6
 
 
- <./colorchecker.png (PNG copy)> <./colorchecker_SPDs-eps-converted-to.pdf>]
-<broccoli_bottle_tomato.png, id=59, 2007.5pt x 1340.00626pt>
-File: broccoli_bottle_tomato.png Graphic file (type png)
-<use broccoli_bottle_tomato.png>
-Package pdftex.def Info: broccoli_bottle_tomato.png  used on input line 295.
-(pdftex.def)             Requested size: 407.89496pt x 272.27896pt.
+ <./colorchecker.jpg> <./colorchecker_SPDs-eps-converted-to.pdf>]
+<broccoli_bottle_tomato.jpg, id=59, 1505.625pt x 1005.00468pt>
+File: broccoli_bottle_tomato.jpg Graphic file (type jpg)
+<use broccoli_bottle_tomato.jpg>
+Package pdftex.def Info: broccoli_bottle_tomato.jpg  used on input line 295.
+(pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <broccoli_bottle_tomato.eps>
 (epstopdf)                    date: 2021-07-15 02:39:32
 (epstopdf)                    size: 86808 bytes
@@ -714,13 +714,13 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 
 [7
 
- <./broccoli_bottle_tomato.png (PNG copy)> <./broccoli_bottle_tomato-eps-conver
-ted-to.pdf>]
-<vermont_path.png, id=70, 2007.5pt x 1340.00626pt>
-File: vermont_path.png Graphic file (type png)
-<use vermont_path.png>
-Package pdftex.def Info: vermont_path.png  used on input line 313.
-(pdftex.def)             Requested size: 407.89496pt x 272.27896pt.
+ <./broccoli_bottle_tomato.jpg> <./broccoli_bottle_tomato-eps-converted-to.pdf>
+]
+<vermont_path.jpg, id=70, 1505.625pt x 1005.00468pt>
+File: vermont_path.jpg Graphic file (type jpg)
+<use vermont_path.jpg>
+Package pdftex.def Info: vermont_path.jpg  used on input line 313.
+(pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <vermont_path.eps>
 (epstopdf)                    date: 2021-07-15 02:41:06
 (epstopdf)                    size: 86221 bytes
@@ -751,12 +751,12 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 
 [8
 
- <./vermont_path.png (PNG copy)> <./vermont_path-eps-converted-to.pdf>]
-<truck.png, id=80, 2007.5pt x 1340.00626pt>
-File: truck.png Graphic file (type png)
-<use truck.png>
-Package pdftex.def Info: truck.png  used on input line 331.
-(pdftex.def)             Requested size: 407.89496pt x 272.27896pt.
+ <./vermont_path.jpg> <./vermont_path-eps-converted-to.pdf>]
+<truck.jpg, id=80, 1505.625pt x 1005.00468pt>
+File: truck.jpg Graphic file (type jpg)
+<use truck.jpg>
+Package pdftex.def Info: truck.jpg  used on input line 331.
+(pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <truck_SPDs.eps>
 (epstopdf)                    date: 2021-07-15 02:50:37
 (epstopdf)                    size: 86157 bytes
@@ -787,7 +787,7 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 
 [9
 
- <./truck.png (PNG copy)> <./truck_SPDs-eps-converted-to.pdf>]
+ <./truck.jpg> <./truck_SPDs-eps-converted-to.pdf>]
 Underfull \hbox (badness 1354) in paragraph at lines 354--355
 [] \OT1/ptm/m/n/10 Ob-server func-tions $\OT1/ptmcm/m/n/10 [[]\OML/ptmcm/m/it/1
 0 ; []; []\OT1/ptmcm/m/n/10 ]$ \OT1/ptm/m/n/10 have in-her-ent lim-i-ta-tions
@@ -942,8 +942,8 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 4739 strings out of 479334
- 75338 string characters out of 2857084
+ 4738 strings out of 479334
+ 75334 string characters out of 2857084
  383743 words of memory out of 3000000
  22107 multiletter control sequences out of 15000+200000
  446454 words of font info for 104 fonts, out of 3000000 for 9000
@@ -964,7 +964,7 @@ ms/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/Admin/AppData/Local/Progra
 ms/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/Admin/AppData/Local/Progra
 ms/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/Admin/AppData/Local/Progra
 ms/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on hyperspectral_imaging_paper.pdf (13 pages, 18718917 bytes).
+Output written on hyperspectral_imaging_paper.pdf (13 pages, 4545518 bytes).
 PDF statistics:
  158 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

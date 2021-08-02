@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (MiKTeX 21.2) (preloaded format=pdflatex 2021.2.21)  15 JUL 2021 08:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (MiKTeX 21.2) (preloaded format=pdflatex 2021.2.21)  2 AUG 2021 01:11
 entering extended mode
 **./hyperspectral_imaging_paper.tex
 (hyperspectral_imaging_paper.tex
@@ -359,12 +359,22 @@ File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 
 
 ]
-Underfull \hbox (badness 2635) in paragraph at lines 115--116
+Underfull \hbox (badness 10000) in paragraph at lines 113--114
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 115--116
+
+ []
+
+
+Underfull \hbox (badness 2635) in paragraph at lines 119--120
 [] \OT1/ptm/m/n/10 The fi-nal spec-i-fi-ca-tion is the full-width half max
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 117--118
+Underfull \hbox (badness 10000) in paragraph at lines 121--122
 
  []
 
@@ -377,7 +387,7 @@ onverted-to.pdf>
 (epstopdf)                    size: 11056 bytes
 (epstopdf)             Command: <epstopdf --outfile=thorlabs_filter_transmissio
 n_spectra-eps-converted-to.pdf thorlabs_filter_transmission_spectra.eps>
-(epstopdf)             \includegraphics on input line 134.
+(epstopdf)             \includegraphics on input line 138.
 Package epstopdf Info: Output file is already uptodate.
 
 
@@ -390,10 +400,10 @@ File: thorlabs_filter_transmission_spectra-eps-converted-to.pdf Graphic file (t
 ype pdf)
 <use thorlabs_filter_transmission_spectra-eps-converted-to.pdf>
 Package pdftex.def Info: thorlabs_filter_transmission_spectra-eps-converted-to.
-pdf  used on input line 134.
+pdf  used on input line 138.
 (pdftex.def)             Requested size: 247.52496pt x 185.64795pt.
 
-Overfull \hbox (6.14288pt too wide) in paragraph at lines 134--135
+Overfull \hbox (6.14288pt too wide) in paragraph at lines 138--139
  [][] 
  []
 
@@ -406,60 +416,127 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.0pt}.
 
 [2]
-Underfull \hbox (badness 10000) in paragraph at lines 145--146
+Package epstopdf Info: Source file: <linearity_shutter_data.eps>
+(epstopdf)                    date: 2021-08-01 16:23:57
+(epstopdf)                    size: 37835 bytes
+(epstopdf)             Output file: <linearity_shutter_data-eps-converted-to.pd
+f>
+(epstopdf)                    date: 2021-08-01 17:01:11
+(epstopdf)                    size: 10666 bytes
+(epstopdf)             Command: <epstopdf --outfile=linearity_shutter_data-eps-
+converted-to.pdf linearity_shutter_data.eps>
+(epstopdf)             \includegraphics on input line 152.
+Package epstopdf Info: Output file is already uptodate.
+
+
+pdfTeX warning: miktex-pdftex.exe (file ./linearity_shutter_data-eps-converted-
+to.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.5> allo
+wed
+<linearity_shutter_data-eps-converted-to.pdf, id=21, 421.575pt x 316.18124pt>
+File: linearity_shutter_data-eps-converted-to.pdf Graphic file (type pdf)
+<use linearity_shutter_data-eps-converted-to.pdf>
+Package pdftex.def Info: linearity_shutter_data-eps-converted-to.pdf  used on i
+nput line 152.
+(pdftex.def)             Requested size: 247.52496pt x 185.64795pt.
+
+Overfull \hbox (6.14288pt too wide) in paragraph at lines 152--153
+ [][] 
+ []
+
+Package epstopdf Info: Source file: <linearity_shutter_curves.eps>
+(epstopdf)                    date: 2021-08-01 16:23:24
+(epstopdf)                    size: 100736 bytes
+(epstopdf)             Output file: <linearity_shutter_curves-eps-converted-to.
+pdf>
+(epstopdf)                    date: 2021-08-01 17:03:15
+(epstopdf)                    size: 11593 bytes
+(epstopdf)             Command: <epstopdf --outfile=linearity_shutter_curves-ep
+s-converted-to.pdf linearity_shutter_curves.eps>
+(epstopdf)             \includegraphics on input line 159.
+Package epstopdf Info: Output file is already uptodate.
+
+
+pdfTeX warning: miktex-pdftex.exe (file ./linearity_shutter_curves-eps-converte
+d-to.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.5> al
+lowed
+<linearity_shutter_curves-eps-converted-to.pdf, id=22, 421.575pt x 316.18124pt>
+
+File: linearity_shutter_curves-eps-converted-to.pdf Graphic file (type pdf)
+<use linearity_shutter_curves-eps-converted-to.pdf>
+Package pdftex.def Info: linearity_shutter_curves-eps-converted-to.pdf  used on
+ input line 159.
+(pdftex.def)             Requested size: 247.52496pt x 185.64795pt.
+
+Overfull \hbox (6.14288pt too wide) in paragraph at lines 159--160
+ [][] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 169--170
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 147--148
+Underfull \hbox (badness 10000) in paragraph at lines 171--172
 
  []
 
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 149.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 173.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 149.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 173.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 149.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 173.
 
-Underfull \hbox (badness 10000) in paragraph at lines 149--150
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 151--152
+Underfull \hbox (badness 10000) in paragraph at lines 173--174
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 153--160
+Underfull \hbox (badness 10000) in paragraph at lines 175--176
 
  []
 
+
+Underfull \hbox (badness 10000) in paragraph at lines 177--184
+
+ []
+
+
+Package fancyhdr Warning: \headheight is too small (10.0pt): 
+(fancyhdr)                Make it at least 12.0pt, for example:
+(fancyhdr)                \setlength{\headheight}{12.0pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-2.0pt}.
+
+[3 <./thorlabs_filter_transmission_spectra-eps-converted-to.pdf> <./linearity_s
+hutter_data-eps-converted-to.pdf> <./linearity_shutter_curves-eps-converted-to.
+pdf>]
 Package epstopdf Info: Source file: <canon_650d_sensitivity.eps>
-(epstopdf)                    date: 2021-07-15 08:27:37
-(epstopdf)                    size: 39644 bytes
+(epstopdf)                    date: 2021-08-01 15:48:29
+(epstopdf)                    size: 40200 bytes
 (epstopdf)             Output file: <canon_650d_sensitivity-eps-converted-to.pd
 f>
-(epstopdf)                    date: 2021-07-15 08:28:29
-(epstopdf)                    size: 9346 bytes
+(epstopdf)                    date: 2021-08-01 15:48:39
+(epstopdf)                    size: 9876 bytes
 (epstopdf)             Command: <epstopdf --outfile=canon_650d_sensitivity-eps-
 converted-to.pdf canon_650d_sensitivity.eps>
-(epstopdf)             \includegraphics on input line 169.
+(epstopdf)             \includegraphics on input line 193.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./canon_650d_sensitivity-eps-converted-
 to.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.5> allo
 wed
-<canon_650d_sensitivity-eps-converted-to.pdf, id=18, 421.575pt x 316.18124pt>
+<canon_650d_sensitivity-eps-converted-to.pdf, id=45, 421.575pt x 316.18124pt>
 File: canon_650d_sensitivity-eps-converted-to.pdf Graphic file (type pdf)
 <use canon_650d_sensitivity-eps-converted-to.pdf>
 Package pdftex.def Info: canon_650d_sensitivity-eps-converted-to.pdf  used on i
-nput line 169.
+nput line 193.
 (pdftex.def)             Requested size: 247.52496pt x 185.64795pt.
 
-Overfull \hbox (6.14288pt too wide) in paragraph at lines 169--170
+Overfull \hbox (6.14288pt too wide) in paragraph at lines 193--194
  [][] 
  []
 
@@ -472,24 +549,38 @@ d-to.pdf>
 (epstopdf)                    size: 15640 bytes
 (epstopdf)             Command: <epstopdf --outfile=camera_spectral_sensitiviti
 es-eps-converted-to.pdf camera_spectral_sensitivities.eps>
-(epstopdf)             \includegraphics on input line 176.
+(epstopdf)             \includegraphics on input line 200.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./camera_spectral_sensitivities-eps-con
 verted-to.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.
 5> allowed
-<camera_spectral_sensitivities-eps-converted-to.pdf, id=19, 421.575pt x 316.181
+<camera_spectral_sensitivities-eps-converted-to.pdf, id=46, 421.575pt x 316.181
 24pt>
 File: camera_spectral_sensitivities-eps-converted-to.pdf Graphic file (type pdf
 )
 <use camera_spectral_sensitivities-eps-converted-to.pdf>
 Package pdftex.def Info: camera_spectral_sensitivities-eps-converted-to.pdf  us
-ed on input line 176.
+ed on input line 200.
 (pdftex.def)             Requested size: 247.52496pt x 185.64795pt.
 
-Overfull \hbox (6.14288pt too wide) in paragraph at lines 176--177
+Overfull \hbox (6.14288pt too wide) in paragraph at lines 200--201
  [][] 
+ []
+
+<IMG_20210712_212507_GIMP.jpg, id=47, 361.35pt x 314.8563pt>
+File: IMG_20210712_212507_GIMP.jpg Graphic file (type jpg)
+<use IMG_20210712_212507_GIMP.jpg>
+Package pdftex.def Info: IMG_20210712_212507_GIMP.jpg  used on input line 218.
+(pdftex.def)             Requested size: 222.77095pt x 194.10869pt.
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 2
+23.
+(C:\Users\Admin\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
+File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
+)
+Underfull \hbox (badness 10000) in paragraph at lines 223--224
+
  []
 
 
@@ -500,90 +591,32 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 
 (fancyhdr)                \addtolength{\topmargin}{-2.0pt}.
 
-[3 <./thorlabs_filter_transmission_spectra-eps-converted-to.pdf> <./canon_650d_
-sensitivity-eps-converted-to.pdf> <./camera_spectral_sensitivities-eps-converte
-d-to.pdf>]
-<IMG_20210712_212507_GIMP.jpg, id=40, 361.35pt x 314.8563pt>
-File: IMG_20210712_212507_GIMP.jpg Graphic file (type jpg)
-<use IMG_20210712_212507_GIMP.jpg>
-Package pdftex.def Info: IMG_20210712_212507_GIMP.jpg  used on input line 194.
-(pdftex.def)             Requested size: 222.77095pt x 194.10869pt.
-LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 1
-99.
-
-(C:\Users\Admin\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
-File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
-)
-Underfull \hbox (badness 10000) in paragraph at lines 199--200
+[4 <./canon_650d_sensitivity-eps-converted-to.pdf> <./camera_spectral_sensitivi
+ties-eps-converted-to.pdf> <./IMG_20210712_212507_GIMP.jpg>]
+Underfull \hbox (badness 10000) in paragraph at lines 225--231
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 201--207
-
- []
-
-
-Underfull \hbox (badness 1325) in paragraph at lines 212--213
+Underfull \hbox (badness 1325) in paragraph at lines 236--237
 []\OT1/ptm/m/n/10 By re-ar-rang-ing the gen-eral ex-pres-sion of sen-si-tiv-ity
  in
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 212--213
+Underfull \hbox (badness 10000) in paragraph at lines 236--237
 
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 214--215
-
- []
-
-
-Underfull \hbox (badness 1354) in paragraph at lines 216--217
-\OT1/ptm/m/n/10 trans-mis-sion $\OML/ptmcm/m/it/10 T$ \OT1/ptm/m/n/10 is ac-cou
-nted for as a fac-tor act-ing on
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 216--217
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 218--219
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 222--223
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 224--225
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 226--227
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 228--229
-
- []
-
-
-Underfull \hbox (badness 1270) in paragraph at lines 238--239
-\OML/ptmcm/m/it/10 SPD[]$ \OT1/ptm/m/n/10 and $\OML/ptmcm/m/it/10 SPD[]$\OT1/pt
-m/m/n/10 , are non-dimensional,
  []
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 238--239
 
+ []
+
+
+Underfull \hbox (badness 1354) in paragraph at lines 240--241
+\OT1/ptm/m/n/10 trans-mis-sion $\OML/ptmcm/m/it/10 T$ \OT1/ptm/m/n/10 is ac-cou
+nted for as a fac-tor act-ing on
  []
 
 
@@ -597,35 +630,68 @@ Underfull \hbox (badness 10000) in paragraph at lines 242--243
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 244--248
+Underfull \hbox (badness 10000) in paragraph at lines 246--247
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 249--250
+Underfull \hbox (badness 10000) in paragraph at lines 248--249
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 251--255
+Underfull \hbox (badness 10000) in paragraph at lines 250--251
 
  []
 
 
-Package fancyhdr Warning: \headheight is too small (10.0pt): 
-(fancyhdr)                Make it at least 12.0pt, for example:
-(fancyhdr)                \setlength{\headheight}{12.0pt}.
-(fancyhdr)                You might also make \topmargin smaller to compensate:
+Underfull \hbox (badness 10000) in paragraph at lines 252--253
 
-(fancyhdr)                \addtolength{\topmargin}{-2.0pt}.
+ []
 
-[4 <./IMG_20210712_212507_GIMP.jpg>]
+
+Underfull \hbox (badness 1270) in paragraph at lines 262--263
+\OML/ptmcm/m/it/10 SPD[]$ \OT1/ptm/m/n/10 and $\OML/ptmcm/m/it/10 SPD[]$\OT1/pt
+m/m/n/10 , are non-dimensional,
+ []
+
+
 Underfull \hbox (badness 10000) in paragraph at lines 262--263
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 264--268
+Underfull \hbox (badness 10000) in paragraph at lines 264--265
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 266--267
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 268--272
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 273--274
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 275--279
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 286--287
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 288--292
 
  []
 
@@ -637,13 +703,11 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 
 (fancyhdr)                \addtolength{\topmargin}{-2.0pt}.
 
-[5
-
-]
-<colorchecker.jpg, id=49, 1505.625pt x 1005.00468pt>
+[5]
+<colorchecker.jpg, id=66, 1505.625pt x 1005.00468pt>
 File: colorchecker.jpg Graphic file (type jpg)
 <use colorchecker.jpg>
-Package pdftex.def Info: colorchecker.jpg  used on input line 277.
+Package pdftex.def Info: colorchecker.jpg  used on input line 301.
 (pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <colorchecker_SPDs.eps>
 (epstopdf)                    date: 2021-07-15 02:37:12
@@ -653,17 +717,17 @@ Package epstopdf Info: Source file: <colorchecker_SPDs.eps>
 (epstopdf)                    size: 14097 bytes
 (epstopdf)             Command: <epstopdf --outfile=colorchecker_SPDs-eps-conve
 rted-to.pdf colorchecker_SPDs.eps>
-(epstopdf)             \includegraphics on input line 285.
+(epstopdf)             \includegraphics on input line 309.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./colorchecker_SPDs-eps-converted-to.pd
 f): PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<colorchecker_SPDs-eps-converted-to.pdf, id=50, 421.575pt x 301.125pt>
+<colorchecker_SPDs-eps-converted-to.pdf, id=67, 421.575pt x 301.125pt>
 File: colorchecker_SPDs-eps-converted-to.pdf Graphic file (type pdf)
 <use colorchecker_SPDs-eps-converted-to.pdf>
 Package pdftex.def Info: colorchecker_SPDs-eps-converted-to.pdf  used on input 
-line 285.
+line 309.
 (pdftex.def)             Requested size: 415.88744pt x 297.03297pt.
 
 Package fancyhdr Warning: \headheight is too small (10.0pt): 
@@ -677,10 +741,10 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 
 
  <./colorchecker.jpg> <./colorchecker_SPDs-eps-converted-to.pdf>]
-<broccoli_bottle_tomato.jpg, id=59, 1505.625pt x 1005.00468pt>
+<broccoli_bottle_tomato.jpg, id=76, 1505.625pt x 1005.00468pt>
 File: broccoli_bottle_tomato.jpg Graphic file (type jpg)
 <use broccoli_bottle_tomato.jpg>
-Package pdftex.def Info: broccoli_bottle_tomato.jpg  used on input line 295.
+Package pdftex.def Info: broccoli_bottle_tomato.jpg  used on input line 319.
 (pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <broccoli_bottle_tomato.eps>
 (epstopdf)                    date: 2021-07-15 02:39:32
@@ -691,18 +755,18 @@ f>
 (epstopdf)                    size: 26576 bytes
 (epstopdf)             Command: <epstopdf --outfile=broccoli_bottle_tomato-eps-
 converted-to.pdf broccoli_bottle_tomato.eps>
-(epstopdf)             \includegraphics on input line 303.
+(epstopdf)             \includegraphics on input line 327.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./broccoli_bottle_tomato-eps-converted-
 to.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.5> allo
 wed
-<broccoli_bottle_tomato-eps-converted-to.pdf, id=60, 421.575pt x 301.125pt>
+<broccoli_bottle_tomato-eps-converted-to.pdf, id=77, 421.575pt x 301.125pt>
 File: broccoli_bottle_tomato-eps-converted-to.pdf Graphic file (type pdf)
 <use broccoli_bottle_tomato-eps-converted-to.pdf>
 Package pdftex.def Info: broccoli_bottle_tomato-eps-converted-to.pdf  used on i
-nput line 303.
+nput line 327.
 (pdftex.def)             Requested size: 415.88744pt x 297.03297pt.
 
 Package fancyhdr Warning: \headheight is too small (10.0pt): 
@@ -716,10 +780,10 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 
  <./broccoli_bottle_tomato.jpg> <./broccoli_bottle_tomato-eps-converted-to.pdf>
 ]
-<vermont_path.jpg, id=70, 1505.625pt x 1005.00468pt>
+<vermont_path.jpg, id=87, 1505.625pt x 1005.00468pt>
 File: vermont_path.jpg Graphic file (type jpg)
 <use vermont_path.jpg>
-Package pdftex.def Info: vermont_path.jpg  used on input line 313.
+Package pdftex.def Info: vermont_path.jpg  used on input line 337.
 (pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <vermont_path.eps>
 (epstopdf)                    date: 2021-07-15 02:41:06
@@ -729,17 +793,17 @@ Package epstopdf Info: Source file: <vermont_path.eps>
 (epstopdf)                    size: 25691 bytes
 (epstopdf)             Command: <epstopdf --outfile=vermont_path-eps-converted-
 to.pdf vermont_path.eps>
-(epstopdf)             \includegraphics on input line 321.
+(epstopdf)             \includegraphics on input line 345.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./vermont_path-eps-converted-to.pdf): P
 DF inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<vermont_path-eps-converted-to.pdf, id=71, 421.575pt x 301.125pt>
+<vermont_path-eps-converted-to.pdf, id=88, 421.575pt x 301.125pt>
 File: vermont_path-eps-converted-to.pdf Graphic file (type pdf)
 <use vermont_path-eps-converted-to.pdf>
 Package pdftex.def Info: vermont_path-eps-converted-to.pdf  used on input line 
-321.
+345.
 (pdftex.def)             Requested size: 415.88744pt x 297.03297pt.
 
 Package fancyhdr Warning: \headheight is too small (10.0pt): 
@@ -752,10 +816,10 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 [8
 
  <./vermont_path.jpg> <./vermont_path-eps-converted-to.pdf>]
-<truck.jpg, id=80, 1505.625pt x 1005.00468pt>
+<truck.jpg, id=97, 1505.625pt x 1005.00468pt>
 File: truck.jpg Graphic file (type jpg)
 <use truck.jpg>
-Package pdftex.def Info: truck.jpg  used on input line 331.
+Package pdftex.def Info: truck.jpg  used on input line 355.
 (pdftex.def)             Requested size: 407.90262pt x 272.27896pt.
 Package epstopdf Info: Source file: <truck_SPDs.eps>
 (epstopdf)                    date: 2021-07-15 02:50:37
@@ -765,17 +829,17 @@ Package epstopdf Info: Source file: <truck_SPDs.eps>
 (epstopdf)                    size: 26747 bytes
 (epstopdf)             Command: <epstopdf --outfile=truck_SPDs-eps-converted-to
 .pdf truck_SPDs.eps>
-(epstopdf)             \includegraphics on input line 339.
+(epstopdf)             \includegraphics on input line 363.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./truck_SPDs-eps-converted-to.pdf): PDF
  inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<truck_SPDs-eps-converted-to.pdf, id=81, 421.575pt x 301.125pt>
+<truck_SPDs-eps-converted-to.pdf, id=98, 421.575pt x 301.125pt>
 File: truck_SPDs-eps-converted-to.pdf Graphic file (type pdf)
 <use truck_SPDs-eps-converted-to.pdf>
-Package pdftex.def Info: truck_SPDs-eps-converted-to.pdf  used on input line 33
-9.
+Package pdftex.def Info: truck_SPDs-eps-converted-to.pdf  used on input line 36
+3.
 (pdftex.def)             Requested size: 415.88744pt x 297.03297pt.
 
 Package fancyhdr Warning: \headheight is too small (10.0pt): 
@@ -788,66 +852,60 @@ Package fancyhdr Warning: \headheight is too small (10.0pt):
 [9
 
  <./truck.jpg> <./truck_SPDs-eps-converted-to.pdf>]
-Underfull \hbox (badness 1354) in paragraph at lines 354--355
+Underfull \hbox (badness 1354) in paragraph at lines 378--379
 [] \OT1/ptm/m/n/10 Ob-server func-tions $\OT1/ptmcm/m/n/10 [[]\OML/ptmcm/m/it/1
 0 ; []; []\OT1/ptmcm/m/n/10 ]$ \OT1/ptm/m/n/10 have in-her-ent lim-i-ta-tions
  []
 
 
-Underfull \hbox (badness 1152) in paragraph at lines 354--355
+Underfull \hbox (badness 1152) in paragraph at lines 378--379
 \OT1/ptm/m/n/10 DCs. They model in-de-pen-dent single-color per-cep-tion
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 373--374
+Underfull \hbox (badness 10000) in paragraph at lines 404--405
 []\OT1/ptm/m/n/10 Cosentino, A. (2015). \OT1/ptm/m/it/10 Mul-ti-spec-tral Imag-
 ing
  []
 
 
-Underfull \hbox (badness 5924) in paragraph at lines 373--374
+Underfull \hbox (badness 5924) in paragraph at lines 404--405
 \OT1/ptm/m/it/10 Sys-tem Us-ing 12 In-ter-fer-ence Fil-ters for Map-
  []
 
 
-Underfull \hbox (badness 1910) in paragraph at lines 373--374
+Underfull \hbox (badness 1910) in paragraph at lines 404--405
 \OT1/ptm/m/it/10 ping Pig-ments. \OT1/ptm/m/n/10 Con-ser-var Patrim[]onio, 21, 
 25{38.
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 379--380
+Underfull \hbox (badness 10000) in paragraph at lines 410--411
 \OT1/ptm/m/n/10 31(2pt2), 449{458. https://doi.org/10.1111/j.1467-
  []
 
 
-Underfull \hbox (badness 2050) in paragraph at lines 382--383
+Underfull \hbox (badness 2050) in paragraph at lines 413--414
 \OT1/ptm/m/it/10 for Dig-i-tal Color Cam-eras? \OT1/ptm/m/n/10 2013 IEEE Work-
  []
 
 
-Overfull \hbox (61.66519pt too wide) in paragraph at lines 385--386
-\OT1/ptm/m/n/10 http://www.brucelindbloom.com/index.html?Eqn[]Spect[]to[]XYZ.ht
-ml. 
- []
-
-
-Underfull \hbox (badness 3769) in paragraph at lines 391--392
+Underfull \hbox (badness 3769) in paragraph at lines 422--423
 []\OT1/ptm/m/n/10 Parkkinen, J. P. S., Hal-likainen, J., & Jaaske-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 391--392
+Underfull \hbox (badness 10000) in paragraph at lines 422--423
 \OT1/ptm/m/n/10 lainen, T. (1989, Febru-ary 1). \OT1/ptm/m/it/10 Char-ac-ter-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 391--392
+Underfull \hbox (badness 10000) in paragraph at lines 422--423
 \OT1/ptm/m/it/10 is-tic Spec-tra of Mun-sell Col-ors\OT1/ptm/m/n/10 . JOSA A.
  []
 
 
-Overfull \hbox (23.11462pt too wide) in paragraph at lines 391--392
+Overfull \hbox (23.11462pt too wide) in paragraph at lines 422--423
 \OT1/ptm/m/n/10 https://www.osapublishing.org/josaa/abstract.cfm?uri=josaa-
  []
 
@@ -872,39 +930,39 @@ to.pdf>
 (epstopdf)                    size: 14403 bytes
 (epstopdf)             Command: <epstopdf --outfile=colorchecker_reconstruction
 -eps-converted-to.pdf colorchecker_reconstruction.eps>
-(epstopdf)             \includegraphics on input line 407.
+(epstopdf)             \includegraphics on input line 441.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./colorchecker_reconstruction-eps-conve
 rted-to.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.5>
  allowed
-<colorchecker_reconstruction-eps-converted-to.pdf, id=93, 752.8125pt x 451.6875
-pt>
+<colorchecker_reconstruction-eps-converted-to.pdf, id=110, 752.8125pt x 451.687
+5pt>
 File: colorchecker_reconstruction-eps-converted-to.pdf Graphic file (type pdf)
 <use colorchecker_reconstruction-eps-converted-to.pdf>
 Package pdftex.def Info: colorchecker_reconstruction-eps-converted-to.pdf  used
- on input line 407.
+ on input line 441.
 (pdftex.def)             Requested size: 445.5419pt x 267.33415pt.
 Package epstopdf Info: Source file: <SPD_validation.eps>
-(epstopdf)                    date: 2021-07-14 22:08:37
-(epstopdf)                    size: 2246224 bytes
+(epstopdf)                    date: 2021-08-01 23:08:22
+(epstopdf)                    size: 2280334 bytes
 (epstopdf)             Output file: <SPD_validation-eps-converted-to.pdf>
-(epstopdf)                    date: 2021-07-14 22:08:59
-(epstopdf)                    size: 92517 bytes
+(epstopdf)                    date: 2021-08-01 23:08:47
+(epstopdf)                    size: 95573 bytes
 (epstopdf)             Command: <epstopdf --outfile=SPD_validation-eps-converte
 d-to.pdf SPD_validation.eps>
-(epstopdf)             \includegraphics on input line 415.
+(epstopdf)             \includegraphics on input line 449.
 Package epstopdf Info: Output file is already uptodate.
 
 
 pdfTeX warning: miktex-pdftex.exe (file ./SPD_validation-eps-converted-to.pdf):
  PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<SPD_validation-eps-converted-to.pdf, id=94, 752.8125pt x 451.6875pt>
+<SPD_validation-eps-converted-to.pdf, id=111, 752.8125pt x 451.6875pt>
 File: SPD_validation-eps-converted-to.pdf Graphic file (type pdf)
 <use SPD_validation-eps-converted-to.pdf>
 Package pdftex.def Info: SPD_validation-eps-converted-to.pdf  used on input lin
-e 415.
+e 449.
 (pdftex.def)             Requested size: 445.5419pt x 267.33415pt.
 
 Package fancyhdr Warning: \headheight is too small (10.0pt): 
@@ -942,31 +1000,32 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 4738 strings out of 479334
- 75334 string characters out of 2857084
- 383743 words of memory out of 3000000
- 22107 multiletter control sequences out of 15000+200000
- 446454 words of font info for 104 fonts, out of 3000000 for 9000
+ 4759 strings out of 479334
+ 76010 string characters out of 2857084
+ 384779 words of memory out of 3000000
+ 22124 multiletter control sequences out of 15000+200000
+ 448581 words of font info for 108 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 83i,12n,88p,1661b,429s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 83i,11n,88p,1674b,429s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Users/Admin/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}<C:
 /Users/Admin/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex1
 0.pfb><C:/Users/Admin/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts
-/cm/cmmi10.pfb><C:/Users/Admin/AppData/Local/Programs/MiKTeX/fonts/type1/public
-/amsfonts/cm/cmr10.pfb><C:/Users/Admin/AppData/Local/Programs/MiKTeX/fonts/type
-1/public/amsfonts/cm/cmsy10.pfb><C:/Users/Admin/AppData/Local/Programs/MiKTeX/f
-onts/type1/urw/courier/ucrr8a.pfb><C:/Users/Admin/AppData/Local/Programs/MiKTeX
-/fonts/type1/urw/helvetic/uhvb8a.pfb><C:/Users/Admin/AppData/Local/Programs/MiK
-TeX/fonts/type1/urw/helvetic/uhvbo8a.pfb><C:/Users/Admin/AppData/Local/Programs
-/MiKTeX/fonts/type1/urw/helvetic/uhvr8a.pfb><C:/Users/Admin/AppData/Local/Progr
-ams/MiKTeX/fonts/type1/urw/symbol/usyr.pfb><C:/Users/Admin/AppData/Local/Progra
-ms/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/Admin/AppData/Local/Progra
-ms/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/Admin/AppData/Local/Progra
-ms/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/Admin/AppData/Local/Progra
-ms/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on hyperspectral_imaging_paper.pdf (13 pages, 4545518 bytes).
+/cmextra/cmex9.pfb><C:/Users/Admin/AppData/Local/Programs/MiKTeX/fonts/type1/pu
+blic/amsfonts/cm/cmmi10.pfb><C:/Users/Admin/AppData/Local/Programs/MiKTeX/fonts
+/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/Admin/AppData/Local/Programs/MiKT
+eX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/Admin/AppData/Local/Prog
+rams/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/Admin/AppData/Local/Pr
+ograms/MiKTeX/fonts/type1/urw/helvetic/uhvb8a.pfb><C:/Users/Admin/AppData/Local
+/Programs/MiKTeX/fonts/type1/urw/helvetic/uhvbo8a.pfb><C:/Users/Admin/AppData/L
+ocal/Programs/MiKTeX/fonts/type1/urw/helvetic/uhvr8a.pfb><C:/Users/Admin/AppDat
+a/Local/Programs/MiKTeX/fonts/type1/urw/symbol/usyr.pfb><C:/Users/Admin/AppData
+/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/Admin/AppData
+/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/Admin/AppData
+/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/Admin/AppData
+/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
+Output written on hyperspectral_imaging_paper.pdf (13 pages, 4577788 bytes).
 PDF statistics:
- 158 PDF objects out of 1000 (max. 8388607)
+ 178 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 71 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 81 words of extra memory for PDF output out of 10000 (max. 10000000)
 

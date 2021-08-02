@@ -91,6 +91,7 @@
     h_leg = legend({'Canon 300D (Jiang)','Canon 500D (Jiang)','Canon 600D (Jiang)','Canon 650D (author)'}, 'location','northeast');
     pos = get(h_leg, 'position');
     set(h_leg, 'position', pos + [0.10 0.05 0 0])
+    set(gca,'yticklabel',{})
     
 % end
 

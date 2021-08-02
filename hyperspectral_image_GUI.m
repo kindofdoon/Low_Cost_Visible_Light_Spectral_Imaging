@@ -42,7 +42,7 @@ function hyperspectral_image_GUI
                         GUI.fig_size_basic          % 6:  sensor calibration
                         GUI.fig_size_basic(1) 900   % 7:  photo histograms
                         GUI.fig_size_basic          % 8:  image
-                        [1200 800]                 % 9:  mesh
+                        1.25.*[1200 800]            % 9:  mesh
                         GUI.fig_size_basic          % 10: SPDs
                         GUI.fig_size_basic          % 11: reflectances (optional)
                     ];
@@ -134,7 +134,7 @@ function hyperspectral_image_GUI
     
     Preview_Res.pos = [GUI.input_x, Load_Photos.pos(2)-GUI.gap_large, GUI.input_dims];
     uicontrol('Style','text', 'String','Preview Res, px', 'Position',[GUI.label_x, Preview_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Preview_Res.handle = uicontrol('Style','edit', 'String','1500', 'Position',Preview_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Preview_Res.handle = uicontrol('Style','edit', 'String','500', 'Position',Preview_Res.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
     Export_Res.pos = [GUI.input_x, Preview_Res.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Export Res, px', 'Position',[GUI.label_x, Export_Res.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
@@ -742,13 +742,56 @@ function hyperspectral_image_GUI
             for y_ind = 1 : size(X,1)
                 for x_ind = 1 : size(X,2)
                     RE(:,end+1) = squeeze(Reflectance(Y(y_ind,x_ind), X(y_ind,x_ind), :));
-                    SPD_mesh(:,end+1) = squeeze(SPD(Y(y_ind,x_ind), X(y_ind,x_ind), :));
+                    
+                    dp = 5; % px, half-width of swatch extraction region (should be clear of border)
+                    
+                    y = (Y(y_ind,x_ind)-dp) : (Y(y_ind,x_ind)+dp);
+                    x = (X(y_ind,x_ind)-dp) : (X(y_ind,x_ind)+dp);
+                    
+                    SPD_extract = squeeze(SPD(y,x,:));
+                    sample_qty = size(SPD_extract,1) * size(SPD_extract,2);
+                    
+                    SPD_mesh(:,end+1) = sum(sum(SPD_extract,1),2) ./ sample_qty;
+                    
                 end
             end
             assignin('base','Reflectance', RE)
             assignin('base','SPD_mesh',SPD_mesh)
-        end
+            
+            if size(SPD_mesh,2) == 24 % if checking the ColorChecker
 
+%                 %%% Correct RAW values according to their row, holding the
+%                 %%% black background as constant
+%
+%                 SPD_mesh_corrected = SPD_mesh;
+% 
+%                 % IMG_5562
+%                 correction.row  = 1:4;
+%                 correction.luminance = linspace(0.0424, 0.0322, length(correction.row));
+% 
+%                 correction.gain = 1 ./ correction.luminance;
+%                 correction.gain = correction.gain ./ min(correction.gain(:));
+%                 row = 1;
+% 
+%                 for s = 1 : size(SPD_mesh,2)
+% 
+%                     gain = interp1(correction.row, correction.gain, row);
+%                     SPD_mesh_corrected(:,s) = SPD_mesh_corrected(:,s) .* gain;
+% 
+%                     if s/6 == round(s/6) % if the last swatch in this row
+%                         row = row + 1; % go to the next row
+%                     end
+% 
+%                 end
+% 
+%                 %%%
+                
+                compare_SPDs(SPD_mesh)
+                
+            end
+            
+        end
+        
         figure(9)
             set(gcf,'Name','Reconstructed Image and Sample Mesh','NumberTitle','off')
             clf
@@ -766,7 +809,7 @@ function hyperspectral_image_GUI
             set(gca,'YDir','reverse') % enforce standard directionality
             scatter(X(:), Y(:), 75, 'wo','LineWidth',2)
             scatter(X(:), Y(:), 75, 'ko','LineWidth',1)
-        
+            
         figure(10)
             set(gcf,'Name','SPDs and Colors at Sample Mesh','NumberTitle','off')
             clf
@@ -785,65 +828,8 @@ function hyperspectral_image_GUI
             xlabel('Wavelength, nm')
             ylabel('Spectral Power Distribution (SPD), ~')
             set(gca,'FontSize',8)
+            set(gca,'yticklabel',{})
 %             title('SPDs and Colors at Sample Mesh')
-
-        %%% DEBUG - show each curve that gets sensitivity-averaged
-        
-%         clc
-%         selection = [3 3 2 2 2 1 1]; % BBGGGRR
-%         
-%         figure(36)
-%             clf
-%             set(gcf,'color','white')
-%             hold on
-%             for p = 1 : numel(X)
-%                 
-%                 for f = 1 : Filter.qty
-%                     
-%                     P(f) = double(Photo.RGB_calc{f}(Y(p),X(p),selection(f)));
-%                     P(f) = P(f) / Sensor.S_dot_T(f,selection(f));
-%                     
-%                 end
-%                 
-%                 plot(Filter.stations, P, 'k')
-%                 
-%             end
-%             grid on
-%             grid minor
-%             xlabel('Wavelength, nm')
-%             ylabel('SPD, ~')
-        
-%         figure(35)
-%             clf
-%             set(gcf,'color','white')
-%             hold on
-%             for p = 1 : numel(X)
-%                 
-%                 for cc = 1 : 3
-%                     
-%                     P = zeros(Filter.qty,1);
-%                     for f = 1 : Filter.qty
-%                         P(f) = Photo.RGB_calc{f}(Y(p),X(p),cc);
-%                     end
-%                     
-%                     P
-% %                     P(P==0) = NaN;
-%                     SPD_cc = P ./ Sensor.S_dot_T(:,cc);
-%                     SPD_cc
-%                     
-%                     col = [0 0 0];
-%                     col(cc) = 1;
-%                     plot(Filter.stations, SPD_cc, '-o', 'Color', col)
-%                     
-%                 end
-%                 
-%             end
-%             xlabel('Wavelength, nm')
-%             ylabel('SPD, ~')
-%             set(gca,'yscale','log')
-%             grid on
-%             grid minor
-        %%%
             
         if get(Reflectance_Toggle.handle, 'value')
             
@@ -1045,11 +1031,20 @@ function hyperspectral_image_GUI
             waitbar(status,h,['Loading ' regexprep(Photo.filenames{p},'\_','\\_') '...'])
             
             [~, RGB_calc, ~] = extract_RAW_via_dcraw(Photo.pathdir, Photo.filenames{p}, 'rggb', '-D -4 -j -t 0', 0, 0, 0);
+
+%             %%%
+%             % Apply RAW Correction
+%             tic
+%             disp('Correcting...')
+%             load('RAW_Correction','RAW_Correction')
+%             for cc = 1 : 3
+%                 RGB_calc(:,:,cc) = interp1(RAW_Correction.x{cc}, RAW_Correction.y{cc}, double(RGB_calc(:,:,cc)));
+%             end
+%             toc
+%             %%%
+
+            % Apply black offset
             RGB_calc = RGB_calc - Photo.RAW_black_level;
-            qty_neg = length(find(RGB_calc<0));
-            if qty_neg > 0
-                warning([Photo.filenames{p} ' contains ' num2str(qty_neg) ' negative pixels after black level offset'])
-            end
             
             if p == 1 % First image in the stack sets the standard width and height
                 Photo.res_orig = [size(RGB_calc,1), size(RGB_calc,2)];
@@ -1066,14 +1061,9 @@ function hyperspectral_image_GUI
             set(gcf,'color','white')
             set(gcf,'Name','Photo Histograms','NumberTitle','off')
             
-            % Find largest value to establish a common set of histograms
-            % bins and unify x-axis scaling
-            max_val = 0;
-            for p = 1 : Photo.qty
-                max_val = max([max_val, max(Photo.RGB_calc{p}(:))]);
-            end
-            edges   = linspace(0, double(max_val), 256);
-            centers = edges(1:(end-1)) + (edges(2)-edges(1))/2;
+            bit_depth = 14;
+            centers = 0 : (2^bit_depth-1);
+            edges = -0.5 : (2^bit_depth-0.5);
             
             for p = 1 : Photo.qty
                 subplot(Photo.qty, 1, p)
@@ -1087,7 +1077,7 @@ function hyperspectral_image_GUI
                     plot(centers, counts, 'Color', col)
                 end
                 
-                xlim([0 max_val])
+                xlim([min(edges) max(edges)-Photo.RAW_black_level])
                 title(['\fontsize{9}\bf' num2str(p) ': \rm' regexprep(Photo.filenames{p},'_','\\_')])
                 grid on
                 grid minor
@@ -1501,8 +1491,7 @@ function hyperspectral_image_GUI
                     0.033016 0.35254 0.49797 0.60149 0.65736 0.78336 0.73926 0.776 0.72276 0.61365 0.4557 0.30535 0.17946 0.12249 0.073361 0.04487 0.020265 0.012304 0.0085751 0.0064746 0.0032885 0.002511 0.0020362 0.0023356 0.0027482 0.0036074 0.0036988 0.0031634 0.0022407 0.00069044 0.00012112 6.3737e-05 4.2452e-05
                     ];
             case 29 % Canon 650D
-                    cam_sen = [0,0.324694866969237,3.05473675948215;0,1.04977554824199,5.57611792769042;0.265164059907257,5.72463921155859,3.87135223697783;0.863769462708549,6.32371122333755,0.798446327637830;3.25245074826289,4.50246976722409,0.288404940976340;2.85571501768572,0.597087631106301,0;1.18558834951318,0.146233480990526,0.0632591933218305]'; % using mode instead of histogram, Canon 650D, weighted,   camera_sensitivity_from_reflected_illuminant.m, IMG_3934.CR2
-%                     cam_sen = [0,0.276800000000000,2.53560000000000;0,0.926200000000000,5.20690000000000;0.237900000000000,5.10770000000000,3.49270000000000;0.745400000000000,5.64790000000000,0.703200000000000;2.85400000000000,4.03850000000000,0.264400000000000;2.54300000000000,0.538300000000000,0;1.05220000000000,0.129600000000000,0.0558000000000000]'; % TEST using white only
+                    cam_sen = [0.0610583241620830,0.313735926944791,2.79787615816815;0.0343274921646836,0.971188259964969,5.15734430619803;0.270419402108050,5.35540926143072,3.61424258382123;0.809747894358056,5.91532403148741,0.749048920868526;3.02836316223996,4.19684130064274,0.268982183236393;2.68879876771154,0.561676977042141,0.0697519135247612;1.11683073291645,0.137218600013737,0.0605268868566701]';
                     Camera.lambda = 420 : 40 : 660;
                 
         end

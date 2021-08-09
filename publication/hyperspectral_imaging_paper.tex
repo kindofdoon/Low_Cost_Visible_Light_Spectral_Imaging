@@ -51,11 +51,11 @@ daniel.w.dichter@gmail.com\\
 
 % Motivate spectral imaging generally
 
-Color perception results from the interaction of an illuminant, optionally a reflective surface, and an observer. Humans are trichromats, having three-dimensional color perception, over the visible light wavelength spectrum of 400 to 700 nm. Various animal species are dichromats, tetrachromats, and so on, with differing visible light wavelength limits. Human color perception is significantly rank-deficient even within its wavelength limits, as shown in Sections \ref{curve_reconstruction} and \ref{curve_reconstruction}.
+Color perception results from the interaction of an illuminant, optionally a reflective surface, and an observer. Humans are trichromats, having three-dimensional color perception, over the visible light wavelength spectrum of 400 to 700 nm. Human color perception is significantly rank-deficient even within its wavelength limits, as shown in Sections \ref{dimensionality} and \ref{curve_reconstruction}.
 
 % Overview of hyperspectral datacubes
 
-\id Whereas digital photography produces a three-dimensional RGB color image, spectral imaging produces an $k$-dimensional hyperspectral datacube (HSDC), typically with 10 $\leq$ $k$ $\leq$ 60; wavelength channels replace color channels. HSDCs are informationally complete and observer independent, providing a more accurate representation of color, and enabling greater optionality in subsequent image processing.
+\id Whereas digital photography produces a three-dimensional RGB (red, green, blue) color image, spectral imaging produces an $k$-dimensional hyperspectral datacube (HSDC), typically with 10 $\leq$ $k$ $\leq$ 60; wavelength channels replace color channels. HSDCs are informationally complete and observer independent, providing a more accurate representation of color, and enabling greater optionality in subsequent image processing.
 
 % Spectral scanning
 
@@ -63,7 +63,7 @@ Color perception results from the interaction of an illuminant, optionally a ref
 
 % Cameras
 
-\id Hyperspectral cameras typically cost at least \$15,000, whereas consumer cameras such as DSLRs may cost as low as \$500. Consumer cameras are not capable of spectral imaging as-is, but various investigators have demonstrated this capability nonetheless with various hardware and software methods. All such methods account for the non-linear trichromate spectral sensitivity of the camera's Bayer filter and image sensor.
+\id A survey of commercially-available hyperspectral cameras\footnote{PixelTeq SpectroCam-VIS, BaySpec GoldenEye, Resonon Pika L} showed a price range of \$20,000-25,000. Consumer cameras such as DSLRs cost 1-10\% of this amount. Consumer cameras are not capable of spectral imaging as-is, but various investigators have demonstrated this capability nonetheless with various hardware and software methods. All such methods account for the non-linear trichromate spectral sensitivity of the camera's Bayer filter and image sensor.
 
 \subsection{Related Work}
 
@@ -84,6 +84,7 @@ Several authors have demonstrated spectral imaging with commercially-available c
 \section{Methods}
 
 \subsection{Dimensionality of Reflectance Spectra}
+\label{dimensionality}
 
 Parkkinen et al. \cite{Parkkinen} measured the reflectance spectra of 1,257 standard Munsell color chips over 400 to 700 nm. Noting that ``the components of a color spectrum are highly correlated'', the authors performed principal component analysis on these spectra, producing a set of reflectance eigenvectors. It was found that these spectra could be reconstructed as linear combinations of eight or fewer eigenvectors. This result implies that reflectance spectra are up to eight-dimensional over the visible light spectrum, with a characteristic wavelength resolution of approximately (700 nm - 400 nm) / 8 = 37.5 nm.
 
@@ -92,14 +93,14 @@ Parkkinen et al. \cite{Parkkinen} measured the reflectance spectra of 1,257 stan
 
 Sampling an SPD by spectral scanning with narrow bandpass filters produces a sparse sample; the value of the SPD is measured only at certain regular intervals. Between these, the value of the SPD is not measured, but can be approximated due to the limited dimensionality of SPDs. This process is modeled as a curve reconstruction problem, i.e.\ given a sparse sampling of an unknown curve, reconstruct the curve by means of an appropriate interpolation scheme such that the reconstructed curve matches a theoretical measured curve. This concept is shown in Figure \ref{curve_reconstruction_colorchecker_2}.
 
-\id To determine the optimal filter quantity and interpolation scheme, two reflectance datasets are considered: the 8 eigenvectors developed by Parkkinen et al.\ \cite{Parkkinen}, and the 24 reflectance spectra measured from an X-Rite ColorChecker Classic \cite{X-Rite} using a Spectro 1 spectrophotometer. The quality of the reconstruction is calculated as the residual sum of squares (RSS), multiplied by the wavelength resolution, divided by the quantity of samples in the dataset. This calculation is performed without an illuminant (i.e.\ directly on reflectance), and with D65 representing typical noon daylight. This normalized error metric allows direct comparison between datasets. The filters are assumed to be of sufficiently narrow bandwidth that they measure at their exact center wavelength (CWL). The following observations were made:
+\id To determine the optimal filter quantity and interpolation scheme, two reflectance datasets are considered: the 8 eigenvectors developed by Parkkinen et al.\ \cite{Parkkinen} with 5 nm resolution, and the 24 reflectance spectra measured from an X-Rite ColorChecker Classic \cite{X-Rite} using a Spectro 1 spectrophotometer with 10 nm resolution. The reconstruction domain is taken as [420 660] nm per Section \ref{section_filters}. The quality of the reconstruction is calculated as the residual sum of squares (RSS) for all curves, multiplied by the wavelength resolution, divided by the quantity of samples in the dataset. This calculation is performed for both reflectance spectra and simulated SPDs using D65 scaled to the range of [0 1]. This normalized error metric allows direct comparison between datasets. The filters are assumed to be of sufficiently narrow bandwidth that they measure at their exact center wavelength (CWL). The following observations were made:
 
 \begin{enumerate}
   \item 30 nm resolution outperforms 40 nm resolution in all cases.
   \item With a 40 nm resolution, cubic interpolation is optimal.
   \item With a 30 nm resolution, cubic interpolation is at least near-optimal.
   \item Optimized error at 40 nm is 1-3x the optimized error at 30 nm, but both are small in an absolute sense.
-  \item The inclusion (or exclusion) of an illuminant does not significantly affect the quality of the curve reconstruction; reflectance dominates.
+  \item Reflectance (not illuminant) dominates the quality of the curve reconstruction.
 \end{enumerate}
 
 Thus, 40 nm resolution and cubic interpolation are used for curve reconstruction.
@@ -107,7 +108,7 @@ Thus, 40 nm resolution and cubic interpolation are used for curve reconstruction
 \begin{figure}
 \centering
 \includegraphics[width=0.5\textwidth]{curve_reconstruction_colorchecker_2.eps}
-\caption{Curve reconstruction for ColorChecker swatch \#2 under D65 illuminant for varying sample quantity.}
+\caption{Curve reconstruction for SPD of ColorChecker swatch \#2 under D65 illuminant for varying sample quantity. Samples are denoted with vertical lines, with cubic interpolation between samples.}
 \label{curve_reconstruction_colorchecker_2}
 \end{figure}
 
@@ -152,9 +153,9 @@ Cost, Total & \$686 (+\$29 case) \\
 \subsection{Camera Response Linearity}
 \label{Camera Sensor Linearity}
 
-RAW values reported from cameras may be thought of as photonic measurements. A simple under-exposure experiment found that pure black (i.e.\ zero photons) corresponds to RAW = 2048. In principle, over-exposure and saturation occur at the maximum value permitted by the bit depth: $2^{14}$ = 16,384. In practice, saturation was observed at values nearly as low as 12,000. Between these limits, response linearity was verified by photographing the ColorChecker chart under noon daylight while independently varying shutter duration and ISO. The trichromate mode of the \#19 white swatch was calculated for each photo as the measurement of interest.
+RAW values reported from cameras may be thought of as photonic measurements. A simple under-exposure experiment found that pure black (i.e.\ zero photons) corresponds to RAW = 2,048. In principle, over-exposure and saturation occur at the maximum value permitted by the bit depth: $2^{14}$ = 16,384. In practice, saturation was observed at values nearly as low as 12,000. Between these limits, response linearity was verified by photographing the ColorChecker chart under noon daylight while independently varying shutter duration and ISO. The trichromate mode of the \#19 white swatch was calculated for each photo as the measurement of interest.
 
-\id These measurements are shown in Figure \ref{linearity_shutter_data}. For ideal linearity, the RAW value is proportional to the product of shutter duration and ISO, all else equal. Accordingly, an idealized RAW value can be calculated for each reported RAW value. This relationship can be expressed as a set of transfer functions, shown in Figure \ref{linearity_shutter_curves}. The shape of these transfer functions indicates that the sensor has a linear response up to saturation as expected. Similarly, varying ISO with a constant shutter duration exhibited near-perfect linearity (f/22, ISO 100-12,800, 1/2,000 sec).
+\id These measurements are shown in Figure \ref{linearity_shutter_data}. For ideal linearity, the RAW value is proportional to the product of shutter duration and ISO, all else equal. Accordingly, an idealized RAW value can be calculated for each reported RAW value, by linearly scaling the product of shutter duration and ISO to the RAW value range of [2,048 12,000]. This relationship can be expressed as a set of transfer functions, shown in Figure \ref{linearity_shutter_curves}. The shape of these transfer functions indicates that the sensor has a linear response up to saturation as expected. Similarly, varying ISO with a constant shutter duration exhibited near-perfect linearity (f/22, ISO 100-12,800, 1/2,000 sec).
 
 \begin{figure}
 \centering
@@ -175,7 +176,7 @@ RAW values reported from cameras may be thought of as photonic measurements. A s
 
 Camera spectral sensitivity is calculated by photographing a ColorChecker chart through each filter under cloudless noon daylight modeled as D65. Noon daylight was chosen for its roughly neutral SPD, availability of standard data, and accessibility. Images were captured on 2021-02-21 at 12:22 pm in an open field in Cambridge, Massachusetts. Each swatch produced a unique SPD modeled as the element-wise product of its spectral reflectance with the D65 illuminant. \cite{CVRL}
 
-\id Reflectance spectra were measured using a Spectro 1 spectrophotometer with a domain of 400 to 700 nm and a resolution of 10 nm. Three scans were performed and averaged for each swatch, with near-perfect repeatability across trials. These spectra were validated by calculating the CIEDE2000 color difference against the manufacturer's published Lab color values under CIE D50 illuminant with a 2° observer. \cite{X-Rite} The error for all 24 swatches was 1.39 ± 1.06 $\Delta E_{00}$, showing good agreement. Research has shown significant variance in ColorChecker spectra, with standard deviations of 0.1-9.1\% over 400-700 nm, though the manufacturer does not publish spectra or tolerances. \cite{BabelColor}
+\id Reflectance spectra were measured using a Spectro 1 spectrophotometer with a domain of 400 to 700 nm and a resolution of 10 nm. Three scans were performed and averaged for each swatch, with near-perfect repeatability across trials. These spectra were validated by calculating the CIEDE2000 color difference (denoted $\Delta E_{00}$) against the manufacturer's published Lab color values under CIE D50 illuminant with a 2° observer. \cite{X-Rite} The error for all 24 swatches was 1.39 ± 1.06 $\Delta E_{00}$, showing good agreement. Research has shown significant variance in ColorChecker spectra, with standard deviations of 0.1-9.1 percentage points over 400-700 nm, though the manufacturer does not publish spectra or tolerances. \cite{BabelColor}
 
 \id Assuming an ideal linear response as shown in Section \ref{Camera Sensor Linearity}, sensitivity may be described generally as:\\
 
@@ -193,7 +194,7 @@ T & Filter transmission \\
 $\odot$ & Element-wise multiplication \\
 \end{tabular} \\
 
-$V_M$ is calculated as the mode of the RAW values inside a square inset slightly from the swatch perimeter. Mode was chosen for its robustness against so-called hot/dead pixels that commonly appear in RAW images, particularly for longer exposures.
+$V_M$ is calculated as the mode of the RAW values inside a square inset slightly from the swatch perimeter. Mode was chosen for its robustness against hot/dead pixels.
 
 \id Sensitivity for all color channels and wavelengths can be calculated from any single swatch, as shown in Figure \ref{canon_650d_sensitivity}. These per-swatch sensitivity curves are fused as a weighted average using $V_M$. This has the effect of weighting calculated sensitivities in proportion to their signal-to-noise ratio.
 
@@ -209,7 +210,7 @@ $V_M$ is calculated as the mode of the RAW values inside a square inset slightly
 \begin{figure}
 \centering
 \includegraphics[width=0.5\textwidth]{camera_spectral_sensitivities.eps}
-\caption{Comparison of normalized sensitivities for various Canon cameras between this paper and literature. \cite{Jiang}}
+\caption{Comparison of normalized sensitivities for various Canon cameras. \cite{Jiang} Curves are normalized so that the maximum sensitivity for each camera is equal to unity.}
 \label{camera_spectral_sensitivities}
 \end{figure}
 
@@ -287,14 +288,16 @@ Standard equations are used to derive XYZ, Lab, and RGB colors from SPDs, with D
 %$SPD_{spectrophotometer}$ & $= R(\lambda) \odot I(\lambda)$ & (Reflective case) \\
 %\end{tabular}\\
 
-\id Results are shown in Figures \ref{colorchecker_mesh} and \ref{colorchecker_SPDs}. The color error for all swatches is 2.44 $\pm$ 1.65 $\Delta E_{00}$. The primary outlier is \#19 white, which shows a good match in terms of normalized distribution, but a poor match in magnitude and thus luminance. This is best explained as an artifact of glare or other lighting non-uniformities, amplified by the high reflectance of the color white. Corroborating this, the SPDs of the matte black background show a spatial luminance variance that matches the SPD magnitude error.
+\id Results are shown in Figures \ref{colorchecker} and \ref{colorchecker_SPDs}. The color error for all swatches is 2.44 $\pm$ 1.65 $\Delta E_{00}$, with more than 90\% of swatches within 1.75 $\pm$ 0.96 $\Delta E_{00}$ . The primary outlier is \#19 white, which shows a good match in terms of normalized distribution, but a poor match in magnitude and thus luminance. This is best explained as an artifact of glare or other lighting non-uniformities, amplified by the high reflectance of the color white. Corroborating this, the SPDs of the matte black background show a spatial luminance variance that matches the SPD magnitude error.
 
-\id In the more general case of an unknown illuminant, the image's luminance CDF may be calculated and scaled such that the image fully utilizes the color space's luminance range with negligible saturation at both extreme ends. This is stated using typical values as:\\
+\id In the more general case of an unknown illuminant, colors are dimensionalized by linear scaling in the luminance (or intensity) dimension to the limits of the color space. Scaling based on mininumum and maximum values is inadvisable due to the possible presence of hot/dead pixels. A common robust strategy is allow a small amount of saturation at the limits of the color space. Reconstructed images in this paper are scaled such that the bottom and top 1\% of pixels are saturated, with black and white defined as 5\% and 95\% (i.e. RGB [13,13,13], [242,242,242]) respectively.
 
-\begin{tabular}{l l}
-Luminance(CDF = 1\%) & = 5\%\\
-Luminance(CDF = 99\%) & = 95\%\\
-\end{tabular}\\
+%luminance CDF may be calculated and scaled such that the image fully utilizes the color space's luminance range with negligible saturation at both extreme ends. This is stated using typical values as:\\
+%
+%\begin{tabular}{l l}
+%Luminance(CDF = 1\%) & = 5\%\\
+%Luminance(CDF = 99\%) & = 95\%\\
+%\end{tabular}\\
 
 %\subsection{Images from HSDCs}
 
@@ -302,67 +305,89 @@ Luminance(CDF = 99\%) & = 95\%\\
 
 \onecolumn
 
-\begin{figure}[H]
-\begin{centering}
-  \includegraphics[height=0.50\linewidth]{colorchecker.jpg}
-  \caption{Reconstructed image of ColorChecker chart under noon daylight; f/2.8, ISO 100, 1/400 sec.}
-  \label{colorchecker_mesh}
-  \end{centering}
-\end{figure}
+\begin{table}[H]
+\centering
+\begin{tabular}{cc}
+\includegraphics[width=0.45\linewidth]{colorchecker.jpg} & \includegraphics[width=0.45\linewidth]{error_summary.eps} \\
+\end{tabular}
+\captionof{figure}{Left: reconstructed image of ColorChecker chart; f/2.8, ISO 100, 1/400 sec. Right: distribution of color errors shown in Figure \ref{colorchecker_SPDs}.}
+\label{colorchecker}
+\end{table}
+
+%\begin{figure}[H]
+%\begin{centering}
+%  \includegraphics[height=0.25\linewidth]{colorchecker.jpg}
+%  \caption{Reconstructed image of ColorChecker chart under noon daylight; f/2.8, ISO 100, 1/400 sec.}
+%  \label{colorchecker_mesh}
+%  \end{centering}
+%\end{figure}
 
 \begin{figure}[H]
 \begin{centering}
   \includegraphics[height=0.60\linewidth]{colorchecker_SPDs.eps}
-%  \caption{SPD and reconstructed color at center of each swatch in Figure \ref{colorchecker_mesh}.}
     \caption{Comparison of SPDs and colors as measured by spectrophotometer (solid, left) and camera (dashed, right). A single scalar gain is applied to align the magnitudes of the two sets of curves. $\Delta E_{00}$ is reported for each swatch. Plots are scaled 400 to 700 nm along x, and non-dimensional along y.}
   \label{colorchecker_SPDs}
-%  \label{SPD_validation}
     \end{centering}
 \end{figure}
 
+
+%\begin{figure}[H]
+%\begin{centering}
+%  \includegraphics[height=0.10\linewidth]{error_summary.eps}
+%    \caption{Distribution of color errors shown in Figure \ref{colorchecker_SPDs}.}
+%  \label{error_summary}
+%    \end{centering}
+%\end{figure}
+
 \clearpage
-\twocolumn
+%\twocolumn
 
 \subsection{Reconstructed Images}
 
-Two scenes are shown with subjects and illuminants that encompass a wide range of everyday color perception. Colors were found to appear naturalistic.
+%\onecolumn
 
-\id The still life in Figures \ref{tomato_mesh} and \ref{tomato_SPDs} has a strong blue-red contrast apparent in the bimodal distribution of the SPDs. A relatively high f-stop was needed to keep the scene in focus, which required increasing both ISO and shutter duration. The lower signal-to-noise ratio inherent with higher ISO can be seen in the high-frequency noise pattern.
+Several scenes are shown in Figure \ref{reconstructed_images} with subjects and illuminants that represent typical color perception. Shown for each scene is the reconstructed image (left column) and a sparse sampling of the HSDC (right column). Each HSDC is sampled at an evenly-distributed 10 x 7 square mesh with 70 nodes total, showing a characteristic set of SPDs that are colored according the reconstructed image.
 
-\id The landscape in Figures \ref{path_mesh} and \ref{path_SPDs} exhibits color and luminance contrast between sky and ground. Modest ``spectral smearing'' can be seen around the edges of foliage due to wind during the photo capture process. The sky exhibits a characteristic D65-like distribution.
+\id The still life (first row) exhibits blue-red contrast apparent in the bimodal distribution of the SPDs. A relatively high f-stop was needed to keep the scene in focus, which required increasing both ISO and shutter duration. The lower signal-to-noise ratio inherent with higher ISO can be seen in the high-frequency noise pattern. The camera settings were f/10, ISO 400, 1/4 second.
 
-\begin{figure}[H]
-\begin{centering}
-  \includegraphics[width=1.00\linewidth]{broccoli_bottle_tomato.jpg}
-  \caption{Reconstructed image of still life under evening horizon light; f/10, ISO 400, 1/4 sec.}
-  \label{tomato_mesh}
-  \end{centering}
-\end{figure}
+\id The landscape (second row) exhibits both color and luminance contrast between sky and ground. Modest ``spectral smearing'' can be seen around the edges of the foliage due to natural movement. The sky exhibits a characteristic D65-like distribution. Higher overall luminance enabled lower ISO and higher shutter duration, reducing noise. The camera settings were f/2.8, ISO 200, 1/200 second.
 
-\begin{figure}[H]
-\begin{centering}
-  \includegraphics[width=1.00\linewidth]{broccoli_bottle_tomato.eps}
-  \caption{SPDs and reconstructed colors sampled at a 70-node square mesh for the scene in Figure \ref{tomato_mesh}.}
-  \label{tomato_SPDs}
-  \end{centering}
-\end{figure}
+\id The industrial scene (third row) exhibits correlation between SPDs that is consistent with the yellow-red light characteristic of sunsets. The camera settings were f/4, ISO 200, 1/60 second.
 
-\begin{figure}[H]
-\begin{centering}
-  \includegraphics[width=1.00\linewidth]{vermont_path.jpg}
-  \caption{Reconstructed image of Vermont landscape at sunset; f/2.8, ISO 200, 1/200 sec.}
-  \label{path_mesh}
-  \end{centering}
-\end{figure}
+\vfill
 
-\begin{figure}[H]
-\begin{centering}
-\vspace{-3mm}
-  \includegraphics[width=1.00\linewidth]{vermont_path.eps}
-  \caption{SPDs and reconstructed colors sampled at a 70-node square mesh for the scene in Figure \ref{path_mesh}.}
-  \label{path_SPDs}
-  \end{centering}
-\end{figure}
+\begin{table}[H]
+\centering
+\begin{tabular}{cc}
+\includegraphics[width=0.40\linewidth]{IMG_4795_hyperspectral_1500_px_06-Aug-2021_14-12-44.jpg} & \includegraphics[width=0.40\linewidth]{broccoli_bottle_tomato.eps} \\
+\includegraphics[width=0.40\linewidth]{IMG_4422_hyperspectral_1500_px_06-Aug-2021_14-14-50.jpg} & \includegraphics[width=0.40\linewidth]{vermont_path.eps} \\
+\includegraphics[width=0.40\linewidth]{IMG_4407_hyperspectral_1500_px_06-Aug-2021_14-08-54} & \includegraphics[width=0.40\linewidth]{truck_SPDs.eps} \\
+\end{tabular}
+\captionof{figure}{Reconstructed RGB images and characteristic sets of SPDs for several scenes.}
+\label{reconstructed_images}
+\end{table}
+
+%\begin{figure}[H]
+%\begin{centering}
+%  \includegraphics[width=0.30\linewidth]{broccoli_bottle_tomato.jpg}
+%  \caption{Reconstructed image of still life under evening horizon light; f/10, ISO 400, 1/4 sec.}
+%%  \label{tomato_mesh}
+%  \includegraphics[width=0.30\linewidth]{broccoli_bottle_tomato.eps}
+%  \caption{SPDs and reconstructed colors sampled at a 70-node square mesh for the scene in Figure \ref{tomato_mesh}.}
+%  \label{tomato_SPDs}
+%  \end{centering}
+%\end{figure}
+%
+%\begin{figure}[H]
+%\begin{centering}
+%  \includegraphics[width=0.30\linewidth]{vermont_path.jpg}
+%  \caption{Reconstructed image of Vermont landscape at sunset; f/2.8, ISO 200, 1/200 sec.}
+%%  \label{path_mesh}
+%  \includegraphics[width=0.30\linewidth]{vermont_path.eps}
+%  \caption{SPDs and reconstructed colors sampled at a 70-node square mesh for the scene in Figure \ref{path_mesh}.}
+%  \label{path_SPDs}
+%  \end{centering}
+%\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -371,9 +396,9 @@ Two scenes are shown with subjects and illuminants that encompass a wide range o
 
 \section{Discussion}
 
-This paper demonstrates a method for visible light spectral imaging at less than 1/10th the cost of a commercial hyperspectral camera. Its results compare favorably to ground truth measurement, both quantitatively and qualitatively, opening access to the field of spectral image processing and reconstruction.
+This paper demonstrates a method for high-resolution visible light spectral imaging at less than 10\% the cost of a commercial hyperspectral camera, using only commercially-available hardware. Results are validated quantitatively and qualitatively against ground truth. Key aspects of novelty include characterization of SPD dimensionality, curve reconstruction from sparse samples, and fusion of trichromate measurements. This method significantly improves access to the field of spectral imaging, and enables further research into the field of spectral image processing.
 
-\id Observer functions $[ \bar{x}, \bar{y}, \bar{z} ]$ have inherent limitations as the sole basis for generating RGB images from HSDCs. They model independent single-color perception only, and do not account for the the mutual influence of simultaneously-perceived colors. This deficiency is apparent in complex scenes where SPDs span several orders of magnitude, or the illuminant is significantly non-spectrally uniform, i.e.\ colored.
+%\id Observer functions $[ \bar{x}, \bar{y}, \bar{z} ]$ have inherent limitations as the sole basis for generating RGB images from HSDCs. They model independent single-color perception only, and do not account for the the mutual influence of simultaneously-perceived colors. This deficiency is apparent in complex scenes where SPDs span several orders of magnitude, or the illuminant is significantly non-spectrally uniform, i.e.\ colored.
 
 %\id Future work may include:
 %
@@ -386,7 +411,7 @@ This paper demonstrates a method for visible light spectral imaging at less than
 
 \section{Acknowledgements}
 
-The author gratefully recognizes the support of friends, family, and colleagues --- in particular, Eric Kirchner for color science and publication guidance, Trey Henderson for computational imaging, Evan Molinari for copyediting, and Michał Dichter for signal processing and project support.
+The author gratefully recognizes his friends, family, and colleagues for their generous and thoughtful support in shaping this work --- in particular: Eric Kirchner, Trey Henderson, Bronek Dichter, Michał Dichter, and Evan Molinari.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -26,7 +26,7 @@ function hyperspectral_image_GUI
     
     %% GUI properties
     
-    GUI.fig_size_basic = round([560 400] .* 1); % px
+    GUI.fig_size_basic = round([560 420] .* 1); % px
     GUI.input_dims     = [175 25]; % px, size of dropdowns, sliders, buttons, etc.
     GUI.input_x        = 170; % px
     GUI.label_x        = 20; % px

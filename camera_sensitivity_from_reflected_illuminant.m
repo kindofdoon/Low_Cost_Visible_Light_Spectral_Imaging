@@ -7,7 +7,9 @@
     % known diffuse surface reflectance. The user informs as to the scene
     % illuminant, and the locations of the swatches. The program calculates
     % the spectral sensitivity of the camera assuming the SPD at each
-    % swatch is the element-wise product of illuminant and reflectance.
+    % swatch is the element-wise product of illuminant and reflectance. The
+    % final result is an average weighted in proportion to the RAW value,
+    % which gives better signal-noise ratio than a simple average.
     
     % DWD 2021-02-13
     
@@ -18,7 +20,7 @@
     
     %% User inputs
 
-    Photo.pathdir          = 'C:\Users\Admin\Desktop\hyperspectral_imaging\spectral_sensitivity\data_photos';
+    Photo.pathdir          = 'C:\Users\Admin\Desktop\hyperspectral_imaging\';
     Swatch.dim             = [4 6]; % [rows, cols] of swatches
     Illuminant.description = 'D65'; % scene illuminant
     Wavelength             = 400 : 1 : 700; % nm, standard wavelength domain
@@ -30,48 +32,6 @@
     Swatch.orig_y          = 1090;
     Swatch.dp              = 410;
     Swatch.window          = 250;
-
-%     Photo.filename_first   = 'IMG_5419.CR2'; % summer noon - DO NOT USE, SATURATED
-%     Swatch.orig_x          = 1950;
-%     Swatch.orig_y          = 1345;
-%     Swatch.dp              = 271;
-%     Swatch.window          = 100;
-
-%     Photo.filename_first   = 'IMG_5244.CR2'; % summer noon
-%     Swatch.orig_x          = 1925;
-%     Swatch.orig_y          = 1340;
-%     Swatch.dp              = 290;
-%     Swatch.window          = 150;
-
-%     Photo.filename_first   = 'IMG_5329.CR2'; % DO NOT USE, SATURATED
-%     Swatch.orig_x          = 1830;
-%     Swatch.orig_y          = 1260;
-%     Swatch.dp              = 325;
-%     Swatch.window          = 100;
-
-%     Photo.filename_first   = 'IMG_5476.CR2';
-%     Swatch.orig_x          = 1982;
-%     Swatch.orig_y          = 1385;
-%     Swatch.dp              = 254;
-%     Swatch.window          = 100;
-    
-%     Photo.filename_first   = 'IMG_5483.CR2';
-%     Swatch.orig_x          = 1982;
-%     Swatch.orig_y          = 1385;
-%     Swatch.dp              = 254;
-%     Swatch.window          = 100;
-
-%     Photo.filename_first   = 'IMG_5555.CR2';
-%     Swatch.orig_x          = 1982;
-%     Swatch.orig_y          = 1385;
-%     Swatch.dp              = 254;
-%     Swatch.window          = 100;
-
-%     Photo.filename_first   = 'IMG_5562.CR2';
-%     Swatch.orig_x          = 1982;
-%     Swatch.orig_y          = 1385;
-%     Swatch.dp              = 254;
-%     Swatch.window          = 100;
 
     %% Swatch reflectance data
     
@@ -151,16 +111,13 @@
 
     Filter.qty = size(trans,2);
     
-    % The user would like to idealize each filter as an ideal
-    % "spike", preventing overlap. This is best for narrow-
-    % bandpass filters, ~5-15 nm FWHM.
+    % Calculate filter CWLs
     Filter.station = zeros(Filter.qty,1);
     for f = 1 : Filter.qty
         CWL = sum(Filter.lambda' .* trans(:,f)) / sum(trans(:,f)); % weighted average
         CWL = round(CWL / CWL_rounding) * CWL_rounding;
         Filter.station(f) = CWL;
     end
-    
     [Filter.station, Filter.ind_station] = intersect(Wavelength, Filter.station);
     
     for f = 1 : Filter.qty
@@ -332,104 +289,88 @@
     clipboard('copy',Sensitivity_Mean)
     disp('Sensitivity_Mean copied to clipboard')
     
-    %% Visualize results
+    %% Show results
     
-%     for s = 19%1 : Swatch.qty
-    
-        figure(103)
-            clf
-            hold on
-            set(gcf,'color','white')
+    figure(103)
+        clf
+        hold on
+        set(gcf,'color','white')
 
-        for cc = 1 : 3
+    for cc = 1 : 3
 
-            col     = zeros(1,3)+0.65;
-            col(cc) = 1;
+        col     = zeros(1,3)+0.65;
+        col(cc) = 1;
 
-            for i_swatch = 1 : Swatch.qty        
-                plot(Filter.station, Sensitivity(:,cc,i_swatch), 'Color', col)
-            end
-
-            %%%
-%             plot(Filter.station, Sensitivity(:,cc,s), '--', 'Color', 'k', 'LineWidth', 2)
-            %%%
-
-            plot(Filter.station, Sensitivity_Mean(:,cc), 'k-o')
-
+        for i_swatch = 1 : Swatch.qty        
+            plot(Filter.station, Sensitivity(:,cc,i_swatch), 'Color', col)
         end
 
-        grid on
-        grid minor
+        plot(Filter.station, Sensitivity_Mean(:,cc), 'k-o')
 
-        xlabel('Wavelength, nm')
-        ylabel('Sensitivity, ~')
-%         title(['#' num2str(s)])
-    %     title('Camera Spectral Sensitivity Per Variably Reflected Illuminant')
-        set(gca,'FontSize',12)
-        set(gca,'yticklabel',{})
-        
-        drawnow
-%         pause
+    end
+
+    grid on
+    grid minor
+
+    xlabel('Wavelength, nm')
+    ylabel('Sensitivity, ~')
+    set(gca,'FontSize',12)
+    set(gca,'yticklabel',{})
     
-%     end
-    
-    %% Show which RAW values are actually active
-    
-    vals = Value_Measured(:);
-    bin_edges = 0 : (2^14-2^11);
-    bin_edges = bin_edges - 0.5;
-    bin_counts = histcounts(Value_Measured(:), bin_edges);
-    bin_centers = bin_edges(1:end-1) + 0.5;
-    
-    is_active = bin_counts>0;
+    %% Show histogram for photo stack
     
     figure(501)
         clf
+        hold on
         set(gcf,'color','white')
-        plot(bin_centers, is_active, 'k')
-        xlim([0 2^14-2^11])
-        grid on
-        grid minor
-        xlabel('RAW Value, With Black Offset')
-        ylabel('Is Active, 0-1')
+    
+    bit_depth = 14;
+    centers = 0 : (2^bit_depth-1);
+    edges = -0.5 : (2^bit_depth-0.5);
+
+    for p = 1 : Photo.qty
+
+        for cc = 1 : 3
+            counts = histcounts(Photo.RGB_orig{p}(:,:,cc), edges);
+            col = [0 0 0];
+            col(cc) = 1;
+            plot(centers, counts, 'Color', col)
+        end
+
+    end
+    
+    xlabel('RAW Value, ~')
+    ylabel('Quantity of Pixels, ~')
+    xlim([0 max(edges)])
+    grid on
+    grid minor
+    set(gca, 'yscale', 'log')
         
     %% Work backwards to validate sensitivies
     
-    % We take sensitivity as true, and V_A as true. We then ask what is the
+    % Take sensitivity as true, and V_A as true. Then ask: what is the
     % value for V_M, assuming these?
     
     Sensitivity_Repeated = repmat(Sensitivity_Mean, [1,1,Swatch.qty]);
     
     Value_Expected = Value_Actual .* Sensitivity_Repeated;
-    
-    for s = 19%1 : Swatch.qty
 
-        figure(555)
-        clf
-        hold on
-        set(gcf,'color','white')
+    figure(555)
+    clf
+    hold on
+    set(gcf,'color','white')
 
-        x = Value_Expected(:);
-        y = Value_Measured(:);
+    x = Value_Expected(:);
+    y = Value_Measured(:);
 
-        scatter(x, y, 'k.')
-        
-        x_ = Value_Expected(:,:,s);
-        y_ = Value_Measured(:,:,s);
-        scatter(x_(:), y_(:), 'ro')
-        grid on
-        grid minor
+    scatter(x, y, 'k.')
+    grid on
+    grid minor
 
-        plot([0 max(xlim)], [0 max(xlim)], 'r')
+    plot([0 max(xlim)], [0 max(xlim)], 'r')
 
-        xlabel('V_M Expected from V_A and S')
-        ylabel('V_M Measured By Camera')
-        
-        title(['#' num2str(s)])
-        drawnow
-%         pause
-
-    end
+    xlabel('V_M Expected from V_A and S')
+    ylabel('V_M Measured By Camera')
 
 % end
 

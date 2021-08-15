@@ -1,7 +1,7 @@
 % function colorchecker_spectral_scans
 
-    % Purpose of this function is to show how repeatable Spectro 1
-    % ColorChecker spectral scans are
+    % Averages ColorChecker reflectance measurements and compares against
+    % official specifications
     
     %%
     

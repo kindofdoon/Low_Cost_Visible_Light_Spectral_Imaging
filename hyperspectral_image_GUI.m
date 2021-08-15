@@ -1,8 +1,13 @@
 function hyperspectral_image_GUI
     
-    % A GUI for processing of hyperspectral images generated from
-    % filter/image pairs. Supports multiple cameras, filters, and
-    % observers.
+    % A spectral imaging GUI. Creates hyperspectral datacubes from photos
+    % gathered by spectral scanning through bandpass filters. Supports
+    % multiple filters, cameras, observers. Supports custom sampling of
+    % SPDs and reflectance spectra, and performs image reconstruction.
+    
+    % Daniel W. Dichter
+    % 2021-08-12
+    % daniel.w.dichter@gmail.com
     
     %%
 
@@ -17,7 +22,7 @@ function hyperspectral_image_GUI
     Image      = [];
     Camera     = [];
     Sensor     = [];
-    SPD        = [];
+    HSDC        = [];
     
     %% GUI properties
     
@@ -29,22 +34,20 @@ function hyperspectral_image_GUI
     GUI.col_hi         = [180 255 180]./255; % highlight color
     GUI.fs             = 10; % fontsize
     GUI.gap_small      = 1; % px
-    GUI.gap_large      = 16; % px
+    GUI.gap_large      = 15; % px
     GUI.label_off_vert = 4; % px, label offset, vertical
     
     % Default sizes for all figures
     GUI.fig_sizes = [
-                        360 1000                    % 1:  control panel
-                        GUI.fig_size_basic          % 2:  observer
-                        GUI.fig_size_basic          % 3:  camera
-                        [560 GUI.fig_size_basic(2)] % 4:  filter colors
-                        [560 GUI.fig_size_basic(2)] % 5:  filter transmissions
-                        GUI.fig_size_basic          % 6:  sensor calibration
-                        GUI.fig_size_basic(1) 900   % 7:  photo histograms
-                        GUI.fig_size_basic          % 8:  image
-                        1.25.*[1200 800]            % 9:  mesh
-                        GUI.fig_size_basic          % 10: SPDs
-                        GUI.fig_size_basic          % 11: reflectances (optional)
+                        360 890            % 1: control panel
+                        GUI.fig_size_basic % 2: observer
+                        GUI.fig_size_basic % 3: camera
+                        GUI.fig_size_basic % 4: filter transmissions
+                        GUI.fig_size_basic % 5: photo histograms
+                        GUI.fig_size_basic % 6: image
+                        GUI.fig_size_basic % 7: mesh
+                        GUI.fig_size_basic % 8: SPDs
+                        GUI.fig_size_basic % 9: reflectances (optional)
                     ];
     
     %% Constants
@@ -65,17 +68,13 @@ function hyperspectral_image_GUI
         
     %% Main inputs
 
-    Select_Filters.pos = [GUI.input_x, GUI.fig_sizes(1,2)-35, GUI.input_dims];
+    Select_Filters.pos = [GUI.input_x, GUI.fig_sizes(1,2)-40, GUI.input_dims];
     Select_Filters.vals = {
-                            'K&F Concept Qty. 9'
-                            'Roscolux 20120-10-04 Qty. 13'
-                            'Ideal Spikes 400-700 nm Qty. 13'
-                            'MidOpt FS100: BP470, BP525, BP590, BP635, BP660'
                             'ThorLabs Qty. 7 CWL 420:40:660 FWHM 10'
                             'No Filter(s)'
                           };
     uicontrol('Style','text', 'String','Filters', 'Position',[GUI.label_x, Select_Filters.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',5, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Select_Filters.handle = uicontrol('Style','popupmenu', 'String',Select_Filters.vals, 'Value',1, 'Position',Select_Filters.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Filters.handle,'Callback',@(hObject,eventdata) update_filters)
     
     Select_Camera.pos = [GUI.input_x, Select_Filters.pos(2)-GUI.gap_small, GUI.input_dims];
@@ -120,13 +119,8 @@ function hyperspectral_image_GUI
     Select_Observer.handle = uicontrol('Style','popupmenu', 'String',Select_Observer.vals, 'Position',Select_Observer.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Select_Observer.handle,'Callback',@(hObject,eventdata) update_observer)
     
-    Select_Calibration.pos = [GUI.input_x, Select_Observer.pos(2)-GUI.gap_small, GUI.input_dims];
-    Select_Calibration.vals = {'None','Custom','Schmid D65'};
-    uicontrol('Style','text', 'String','Calibration', 'Position',[GUI.label_x, Select_Calibration.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Select_Calibration.handle = uicontrol('Style','popupmenu', 'String',Select_Calibration.vals, 'Value',1, 'Position',Select_Calibration.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    set(Select_Calibration.handle,'Callback',@(hObject,eventdata) update_sensor)
-    
-    Load_Photos.pos = [GUI.input_x, Select_Calibration.pos(2)-GUI.gap_small, GUI.input_dims];
+    Load_Photos.pos = [GUI.input_x, Select_Observer.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','Photos', 'Position',[GUI.label_x, Load_Photos.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Load_Photos.handle = uicontrol('Style','pushbutton', 'String','Load Photos', 'Position',Load_Photos.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Load_Photos.handle,'Callback',@(hObject,eventdata) load_photos)
 
@@ -165,7 +159,7 @@ function hyperspectral_image_GUI
     %% Camera gains
     
     Interpolation_Method.pos = [GUI.input_x, Select_Illuminant.pos(2)-GUI.gap_large, GUI.input_dims];
-    Interpolation_Method.vals = {'linear','spline','cubic'};
+    Interpolation_Method.vals = {'linear','spline','pchip'};
     uicontrol('Style','text', 'String','Interpolation Method', 'Position',[GUI.label_x, Interpolation_Method.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Interpolation_Method.handle = uicontrol('Style','popupmenu', 'String',Interpolation_Method.vals, 'Value',3, 'Position',Interpolation_Method.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
@@ -177,17 +171,9 @@ function hyperspectral_image_GUI
     uicontrol('Style','text', 'String','Zero Slope Fraction', 'Position',[GUI.label_x, Zero_Slope_Fraction.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Zero_Slope_Fraction.handle = uicontrol('Style','edit', 'String','1.0', 'Position',Zero_Slope_Fraction.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
-    Calibration_Wavelengths.pos = [GUI.input_x, Zero_Slope_Fraction.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Calibration Wavelengths', 'Position',[GUI.label_x, Calibration_Wavelengths.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Calibration_Wavelengths.handle = uicontrol('Style','edit', 'String','', 'Position',Calibration_Wavelengths.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    
-    Calibration_Gains.pos = [GUI.input_x, Calibration_Wavelengths.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','Calibration Gains', 'Position',[GUI.label_x, Calibration_Gains.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Calibration_Gains.handle = uicontrol('Style','edit', 'String','', 'Position',Calibration_Gains.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    
     %% Value scaling
     
-    Gamma.pos = [GUI.input_x, Calibration_Gains.pos(2)-GUI.gap_large, GUI.input_dims];
+    Gamma.pos = [GUI.input_x, Zero_Slope_Fraction.pos(2)-GUI.gap_large, GUI.input_dims];
     uicontrol('Style','text', 'String','Gamma', 'Position',[GUI.label_x, Gamma.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Gamma.handle = uicontrol('Style','edit', 'String','1.00', 'Position',Gamma.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
@@ -211,9 +197,13 @@ function hyperspectral_image_GUI
   
     Mesh_Density.pos = [GUI.input_x, Value_High.pos(2)-GUI.gap_large, GUI.input_dims];
     uicontrol('Style','text', 'String','Mesh Density, pt/side', 'Position',[GUI.label_x, Mesh_Density.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    Mesh_Density.handle = uicontrol('Style','edit', 'String','5', 'Position',Mesh_Density.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    Mesh_Density.handle = uicontrol('Style','edit', 'String','10', 'Position',Mesh_Density.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
 
-    Custom_Mesh_Toggle.pos = [GUI.input_x, Mesh_Density.pos(2)-GUI.gap_small, GUI.input_dims];
+    Mesh_Sample_Window.pos = [GUI.input_x, Mesh_Density.pos(2)-GUI.gap_small, GUI.input_dims];
+    uicontrol('Style','text', 'String','Mesh Smpl. Window, px', 'Position',[GUI.label_x, Mesh_Sample_Window.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
+    Mesh_Sample_Window.handle = uicontrol('Style','edit', 'String','10', 'Position',Mesh_Sample_Window.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
+    
+    Custom_Mesh_Toggle.pos = [GUI.input_x, Mesh_Sample_Window.pos(2)-GUI.gap_small, GUI.input_dims];
     uicontrol('Style','text', 'String','Custom Mesh Toggle', 'Position',[GUI.label_x, Custom_Mesh_Toggle.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Custom_Mesh_Toggle.handle = uicontrol('Style','checkbox', 'Value', 0, 'String','', 'Position',Custom_Mesh_Toggle.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
@@ -225,13 +215,9 @@ function hyperspectral_image_GUI
     uicontrol('Style','text', 'String','Custom Mesh y, px', 'Position',[GUI.label_x, Custom_Mesh_y.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
     Custom_Mesh_y.handle = uicontrol('Style','edit', 'String','', 'Position',Custom_Mesh_y.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     
-    GIF_Duration.pos = [GUI.input_x, Custom_Mesh_y.pos(2)-GUI.gap_small, GUI.input_dims];
-    uicontrol('Style','text', 'String','GIF Duration, sec', 'Position',[GUI.label_x, GIF_Duration.pos(2)-GUI.label_off_vert, GUI.label_dims], 'BackgroundColor','w', 'FontSize',GUI.fs,'HorizontalAlignment','left');
-    GIF_Duration.handle = uicontrol('Style','edit', 'String','5', 'Position',GIF_Duration.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
-    
     %% Execution/Control
     
-    Preview_Image.pos = [GUI.input_x, GIF_Duration.pos(2)-GUI.gap_large, GUI.input_dims];
+    Preview_Image.pos = [GUI.input_x, Custom_Mesh_y.pos(2)-GUI.gap_large, GUI.input_dims];
     Preview_Image.handle = uicontrol('Style','pushbutton', 'String','Preview Image', 'Position',Preview_Image.pos, 'BackgroundColor',GUI.col_hi, 'FontSize',GUI.fs);
     set(Preview_Image.handle,'Callback',@(hObject,eventdata) preview_image)
     
@@ -239,11 +225,7 @@ function hyperspectral_image_GUI
     Export_Image.handle = uicontrol('Style','pushbutton', 'String','Export Image', 'Position',Export_Image.pos, 'BackgroundColor',GUI.col_hi, 'FontSize',GUI.fs);
     set(Export_Image.handle,'Callback',@(hObject,eventdata) export_image)
     
-    Generate_GIF.pos = [GUI.input_x, Export_Image.pos(2)-GUI.gap_small, GUI.input_dims];
-    Generate_GIF.handle = uicontrol('Style','pushbutton', 'String','Generate GIF', 'Position',Generate_GIF.pos, 'BackgroundColor',GUI.col_hi, 'FontSize',GUI.fs);
-    set(Generate_GIF.handle,'Callback',@(hObject,eventdata) generate_GIF)
-    
-    Reset_Controls.pos = [GUI.input_x, Generate_GIF.pos(2)-GUI.gap_large, GUI.input_dims];
+    Reset_Controls.pos = [GUI.input_x, Export_Image.pos(2)-GUI.gap_large, GUI.input_dims];
     Reset_Controls.handle = uicontrol('Style','pushbutton', 'String','Reset Controls', 'Position',Reset_Controls.pos, 'BackgroundColor',GUI.col_bac, 'FontSize',GUI.fs);
     set(Reset_Controls.handle,'Callback',@(hObject,eventdata) reset_controls)
     
@@ -264,7 +246,7 @@ function hyperspectral_image_GUI
     update_wavelength
     reset_figures
     
-    %% Supporting functions
+    %% Supporting functions below
     
     function update_wavelength
         
@@ -275,7 +257,7 @@ function hyperspectral_image_GUI
         update_camera
         update_sensor
         
-        % For debug purposes - send high-level structures to workspace
+        % Send structures to workspace
         assignin('base','Wavelength', Wavelength)
         assignin('base','Observer',   Observer)
         assignin('base','Photo',      Photo)
@@ -283,7 +265,7 @@ function hyperspectral_image_GUI
         assignin('base','Image',      Image)
         assignin('base','Camera',     Camera)
         assignin('base','Sensor',     Sensor)
-        assignin('base','SPD',        SPD)
+        assignin('base','HSDC',       HSDC)
         
     end
 
@@ -291,8 +273,6 @@ function hyperspectral_image_GUI
 
     function update_sensor
         
-        % In this function, overall system properties are calculated
-
         % Take dot product of S (camera sensitivities) and T (filter transmissions)
         domain = 400 : 1 : 700;
         Sensor.S_dot_T = zeros(Filter.qty, 3);
@@ -300,69 +280,16 @@ function hyperspectral_image_GUI
             
             S = Camera.Sen_orig(:,cc);
             x_wider = [min(domain) Camera.lam_orig max(domain)];
-            S = interp1(Camera.lam_orig, S, x_wider, 'linear','extrap');
-            S = interp1(x_wider, S, domain, 'pchip');
+            x_wider = unique(x_wider);
+            S = interp1(Camera.lam_orig, S, x_wider, 'linear','extrap'); % coarse linear extrapolation
+            S = interp1(x_wider, S, domain, 'pchip'); % fine pchip interpolation
             S(S<0) = 0;
             
             for i_lam = 1 : Filter.qty
                 T = interp1(Filter.lam_orig, Filter.T_orig(:,i_lam), domain);
                 Sensor.S_dot_T(i_lam,cc) = dot(S, T);
-%                 figure(22)
-%                     clf
-%                     hold on
-%                     plot(domain, S)
-%                     plot(domain, T)
-%                     scatter(Camera.lam_orig, Camera.Sen_orig(:,cc), 'ko')
-%                     drawnow
-%                     pause
             end
         end
-        
-        % Prepare calibration
-        i_cal = get(Select_Calibration.handle, 'value');
-        
-        switch i_cal
-            
-            case 1 % None
-                cx = [min(Wavelength) max(Wavelength)];
-                cy = [1 1];
-                
-            case 2 % Custom
-                calib_x = get(Calibration_Wavelengths.handle, 'string');
-                calib_y = get(Calibration_Gains.handle, 'string');
-                calib_x = regexp(calib_x, '([0-9.]+)', 'tokens');
-                calib_y = regexp(calib_y, '([0-9.]+)', 'tokens');
-                if length(calib_x) ~= length(calib_y) || length(calib_x) < 2
-                    warning('Invalid calibration parameters')
-                    return
-                end
-                cx = zeros(length(calib_x),1);
-                cy = zeros(length(calib_y),1);
-                for c = 1 : length(calib_x)
-                    cx(c) = str2double(calib_x{c}{1});
-                    cy(c) = str2double(calib_y{c}{1});
-                end
-            
-            case 3 % Schmid D65
-                cx = [400 700];
-                cy = [0.40 1.20];
-                
-        end
-
-        Sensor.calibration_gain       = interp1(cx, cy, Wavelength);
-        Sensor.calibration_wavelength = Wavelength;
-
-        figure(6)
-            set(gcf,'Name','Sensor Calibration Curve','NumberTitle','off')
-            clf
-            set(gcf,'color','white')
-            plot(Sensor.calibration_wavelength, Sensor.calibration_gain, 'k')
-            ylim([0 max(ylim)])
-            grid on
-            grid minor
-            xlabel('Wavelength, nm')
-            ylabel('SPD Calibration Gain, ~')
-            title('Sensor Calibration Curve')
 
     end
     
@@ -370,31 +297,27 @@ function hyperspectral_image_GUI
     
     function reset_controls
         
-        set(Select_Filters.handle,          'value',  5)
+        set(Select_Filters.handle,          'value',  1)
         set(Select_Camera.handle,           'value',  29)
         set(Select_Observer.handle,         'value',  1)
-        set(Select_Calibration.handle,      'value',  1)
         set(Preview_Res.handle,             'string', 500)
         set(Export_Res.handle,              'string', 2000)
-        set(Wavelength_Res.handle,          'value',  5)
+        set(Wavelength_Res.handle,          'value',  3)
         set(CWL_Res.handle,                 'string', 10)
         set(Reflectance_Toggle.handle,      'value',  0)
         set(Select_Illuminant.handle,       'value',  5)
         set(Zero_Slope_Toggle.handle,       'value',  0)
         set(Zero_Slope_Fraction.handle,     'string', '1.0')
-        set(Calibration_Wavelengths.handle, 'string', '')
-        set(Calibration_Gains.handle,       'string', '')
         set(Gamma.handle,                   'string', '1.00')
         set(Fraction_Saturated_Low.handle,  'string', '0.01')
         set(Fraction_Saturated_High.handle, 'string', '0.01')
         set(Value_Low.handle,               'string', '0.05')
         set(Value_High.handle,              'string', '0.95')
-        set(Mesh_Density.handle,            'string', '15')
+        set(Mesh_Density.handle,            'string', '10')
+        set(Mesh_Sample_Window.handle,      'string', '10')
         set(Custom_Mesh_Toggle.handle,      'value',  0)
         set(Custom_Mesh_x.handle,           'string', '')
         set(Custom_Mesh_y.handle,           'string', '')
-        set(Mesh_Density.handle,            'string', '15')
-        set(GIF_Duration.handle,            'string', '5')
         
     end
     
@@ -431,19 +354,9 @@ function hyperspectral_image_GUI
         xy = [oc(1)*2.5 + GUI.fig_sizes(1,1), screen_res(2)-oc(2)-GUI.fig_sizes(2,2)];
         
         for f = 2 : length(fig_handles)
-            
             figure(f)
-            
-            switch f
-                case 7
-                    offset = [0 -455];
-                otherwise
-                    offset = [0 0];
-            end
-            
-            set(gcf,'position',[xy+offset GUI.fig_sizes(f,:)]);
+            set(gcf,'position',[xy GUI.fig_sizes(f,:)]);
             xy = xy + dp;
-            
         end
         
     end
@@ -474,7 +387,8 @@ function hyperspectral_image_GUI
 
     function generate_image
 
-        % The core function in which SPDs and a reconstructed image are calculated
+        % The core function in which the HSDC and reconstructed image are
+        % calculated and sampled
         
         % Rescale all photos in width and height, if necessary
         Photo.RGB = cell(size(Photo.RGB_calc));
@@ -487,81 +401,40 @@ function hyperspectral_image_GUI
         end
         Photo.res = [size(Photo.RGB{1},1), size(Photo.RGB{1},2)];
         
-        qty_lam_calc   = length(Filter.stations); % coarse
-        qty_lam_report = length(Wavelength);      % fine
-                
-        SPD = zeros(Photo.res(1), Photo.res(2), qty_lam_calc); % initialize datacube
+        qty_lam_calc   = length(Filter.CWL); % coarse
+        qty_lam_report = length(Wavelength); % fine
 
+        % Calculate HSDC from RAW values
+        HSDC = zeros(Photo.res(1), Photo.res(2), qty_lam_calc); % initialize datacube
         for w = 1 : qty_lam_calc % for each wavelength
-            
-%             T   = Filter.T(Filter.ind_stations(w),w);
             RGB = double(Photo.RGB{w});
-            
             for cc = 1 : 3
-                S = Camera.sensitivity(Filter.ind_stations(w),cc);
-                SPD(:,:,w) = SPD(:,:,w) + (RGB(:,:,cc).*S) ./ Sensor.S_dot_T(w,cc);
+                S_cc = Camera.sensitivity(Filter.ind_CWL(w),cc);
+                HSDC(:,:,w) = HSDC(:,:,w) + (RGB(:,:,cc).*S_cc) ./ Sensor.S_dot_T(w,cc);
             end
-            S = sum(Camera.sensitivity(Filter.ind_stations(w),:));
-            SPD(:,:,w) = SPD(:,:,w) ./ S;
-            
-%             % Weighted average by sensitivity - dot product of S and T
-%             ST = sum(Sensor.S_dot_T(w,:));
-%             ST = repmat(ST, [size(SPD,1),size(SPD,2)]);
-%             SPD(:,:,w) = sum(RGB,3) ./ (ST);
-            
-%             % Weighted average by sensitivity - scalar product of S and T
-%             S   = sum(Camera.sensitivity(Filter.ind_stations(w),:));
-%             ST  = S * T;
-%             ST  = repmat(ST, [size(SPD,1),size(SPD,2)]);
-%             SPD(:,:,w) = sum(RGB,3) ./ (ST);
-            
-%             % Unweighted average
-%             S = Camera.sensitivity(Filter.ind_stations(w),:);
-%             for cc = 1 : 3
-%                 SPD(:,:,w) = SPD(:,:,w) + RGB(:,:,cc) ./ S(cc) .* (1/T);
-%             end
-
-%             % Weighted average by product of sensitivity and measured value
-%             R = RGB(:,:,1);
-%             G = RGB(:,:,2);
-%             B = RGB(:,:,3);
-%             S = Camera.sensitivity(Filter.ind_stations(w),:);
-%             SR = S(1);
-%             SG = S(2);
-%             SB = S(3);
-%             alpha(:,:,1) = R ./ SR;
-%             alpha(:,:,2) = G ./ SG;
-%             alpha(:,:,3) = B ./ SB;
-%             alpha(find(isnan(alpha))) = 0;
-%             alpha(find(isinf(alpha))) = 0;
-%             SPD(:,:,w) = sum(alpha.^2,3) ./ (T.*sum(alpha,3));
-            
+            S_sum = sum(Camera.sensitivity(Filter.ind_CWL(w),:));
+            HSDC(:,:,w) = HSDC(:,:,w) ./ S_sum;
         end
         
-        % Enforce zero mean SPD slope if requested
+        % Enforce zero mean HSDC slope if requested
         if get(Zero_Slope_Toggle.handle,'value')
             zero_slope_fraction = str2double(get(Zero_Slope_Fraction.handle,'string')); % 0: no change; 1: full change
-            SPD_mean = sum(sum(SPD,1),2);
+            SPD_mean = sum(sum(HSDC,1),2);
             SPD_mean = squeeze(SPD_mean);
             SPD_mean = SPD_mean ./ prod(Photo.res);
             SPD_mean = reshape(SPD_mean, [1,1,Filter.qty]);
             SPD_mean = repmat(SPD_mean, [Photo.res,1]);
-            SPD_     = SPD ./ SPD_mean;
-            SPD = (1-zero_slope_fraction).*SPD./max(SPD(:)) + zero_slope_fraction.*SPD_./max(SPD_(:));
+            SPD_     = HSDC ./ SPD_mean;
+            HSDC = (1-zero_slope_fraction).*HSDC./max(HSDC(:)) + zero_slope_fraction.*SPD_./max(SPD_(:));
         end
-
-        % Apply calibration
-        CALIB = reshape(Sensor.calibration_gain(Filter.ind_stations), [1,1,qty_lam_calc]);
-        CALIB = repmat(CALIB, [Photo.res,1]);
-        SPD   = SPD .* CALIB;
         
         % Set indices for interpolation vs. extrapolation
         h = waitbar(0,'Interpolating and extrapolating datacube...');
-        i_interp = intersect(find(Wavelength>=min(Filter.stations)), find(Wavelength<=max(Filter.stations)));
+        i_interp = intersect(find(Wavelength>=min(Filter.CWL)), find(Wavelength<=max(Filter.CWL)));
         i_extrap = setdiff(1:length(Wavelength), i_interp);
         
         % Interpolate within filter domain
-        [X,  Y,  W]  = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(Filter.ind_stations));
+        [X,  Y,  W]  = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(Filter.ind_CWL));
         [Xq, Yq, Wq] = meshgrid(1:Photo.res(2), 1:Photo.res(1), Wavelength(i_interp));
         if ~isequal(W, Wq)
             switch get(Interpolation_Method.handle, 'value')
@@ -570,11 +443,19 @@ function hyperspectral_image_GUI
                 case 2
                     interp_method = 'spline';
                 case 3
-                    interp_method = 'cubic';
+                    interp_method = 'pchip';
                 otherwise
                     error('Invalid interpolation method')
             end
-            SPD = interp3(X, Y, W, SPD, Xq, Yq, Wq, interp_method);
+            
+            % Workaround specific to R2015a which inconsistently supports
+            % cubic vs. pchip depending on 1D vs. 3D interp
+            if strcmp(interp_method,'pchip')
+                HSDC = interp3(X, Y, W, HSDC, Xq, Yq, Wq, 'cubic');
+            else
+                HSDC = interp3(X, Y, W, HSDC, Xq, Yq, Wq, interp_method);
+            end
+            
         end
         
         % Extrapolate beyond filter domain
@@ -583,16 +464,16 @@ function hyperspectral_image_GUI
             % spline extrapolation, which is not well-defined.
             SPD_ = zeros(Photo.res(1), Photo.res(2), qty_lam_report);
             i_mid = round(qty_lam_report/2);
-            SPD_(:,:,1:i_mid)       = repmat(SPD(:,:,1),   [1,1,length(1:i_mid)]);
-            SPD_(:,:,(i_mid+1):qty_lam_report) = repmat(SPD(:,:,end), [1,1,length((i_mid+1):qty_lam_report)]);
-            SPD_(:,:,i_interp) = SPD; % paste interpolated data in correct place
-            SPD = SPD_;
+            SPD_(:,:,1:i_mid)       = repmat(HSDC(:,:,1),   [1,1,length(1:i_mid)]);
+            SPD_(:,:,(i_mid+1):qty_lam_report) = repmat(HSDC(:,:,end), [1,1,length((i_mid+1):qty_lam_report)]);
+            SPD_(:,:,i_interp) = HSDC; % paste interpolated data in correct place
+            HSDC = SPD_;
         end
         
         close(h)
 
         % Normalize
-        SPD = SPD ./ max(SPD(:));
+        HSDC = HSDC ./ max(HSDC(:));
         
         % Calculate reflectance if requested
         if get(Reflectance_Toggle.handle, 'value')
@@ -616,15 +497,21 @@ function hyperspectral_image_GUI
                 case 6 % D75
                     Illuminant.lambda = [300 305 310 315 320 325 330 335 340 345 350 355 360 365 370 375 380 385 390 395 400 405 410 415 420 425 430 435 440 445 450 455 460 465 470 475 480 485 490 495 500 505 510 515 520 525 530 535 540 545 550 555 560 565 570 575 580 585 590 595 600 605 610 615 620 625 630 635 640 645 650 655 660 665 670 675 680 685 690 695 700 705 710 715 720 725 730 735 740 745 750 755 760 765 770 775 780];
                     Illuminant.power  = [0.043 2.588 5.133 17.47 29.808 42.369 54.93 56.095 57.259 60 62.74 62.861 62.982 66.647 70.312 68.507 66.703 68.333 69.963 85.946 101.929 106.911 111.894 112.346 112.798 107.945 103.092 112.145 121.198 127.104 133.01 132.682 132.355 129.838 127.322 127.061 126.8 122.291 117.783 117.186 116.589 115.146 113.702 111.181 108.659 109.552 110.445 108.367 106.289 105.596 104.904 102.452 100 97.808 95.616 94.914 94.213 90.605 86.997 87.112 87.227 86.684 86.14 84.861 83.581 81.164 78.747 78.587 78.428 76.614 74.801 74.562 74.324 74.873 75.422 73.499 71.576 67.714 63.852 64.464 65.076 66.573 68.07 62.256 56.443 60.343 64.242 66.697 69.151 63.89 58.629 50.623 42.617 51.985 61.352 59.838 58.324];
+                otherwise
+                    error('Unrecognized illuminant')
             end
             
-            i_x = Wavelength(Filter.ind_stations);
+            i_x = Wavelength(Filter.ind_CWL);
             i_y = interp1(Illuminant.lambda, Illuminant.power, i_x);
             i_y = interp1(i_x, i_y, Wavelength, interp_method);
-            i_y = reshape(i_y, [1,1,size(SPD,3)]);
-            i_y = repmat(i_y, [size(SPD,1), size(SPD,2), 1]);
-            Reflectance = SPD ./ i_y;
+            i_y = reshape(i_y, [1,1,size(HSDC,3)]);
+            i_y = repmat(i_y, [size(HSDC,1), size(HSDC,2), 1]);
+            Reflectance = HSDC ./ i_y;
             Reflectance = Reflectance ./ max(Reflectance(:));
+            
+        else
+            
+            Reflectance = nan(size(HSDC));
             
         end
         
@@ -647,7 +534,7 @@ function hyperspectral_image_GUI
         C{3} = Z_C;
 
         for cc = 1 : 3
-            Image.XYZ(:,:,cc) = sum(SPD .* C{cc}, 3);
+            Image.XYZ(:,:,cc) = sum(HSDC .* C{cc}, 3);
         end
         
         % Normalize XYZ values
@@ -680,16 +567,18 @@ function hyperspectral_image_GUI
         Image.RGB(Image.RGB < 0) = 0;
         Image.RGB(Image.RGB > 1) = 1;
         
-        figure(8)
-            set(gcf,'Name','Image','NumberTitle','off')
+        figure(6)
+            set(gcf,'Name','Reconstructed Image','NumberTitle','off')
             clf
             set(gcf,'color','white')
             image(Image.RGB)
+            set(gca,'XTick',[])
+            set(gca,'YTick',[])
             axis tight
             axis equal
-            title('Reconstructed Image')
+            set(gca,'position',[0 0 1 1])
 
-        % Create mesh for checking SPDs
+        % Create mesh for sampling SPDs
         if get(Custom_Mesh_Toggle.handle,'value') % user requests custom mesh
             
             mesh_x = get(Custom_Mesh_x.handle, 'string');
@@ -736,70 +625,14 @@ function hyperspectral_image_GUI
         
         end % mesh created
         
-        if get(Reflectance_Toggle.handle, 'value')
-            RE = [];
-            SPD_mesh = [];
-            for y_ind = 1 : size(X,1)
-                for x_ind = 1 : size(X,2)
-                    RE(:,end+1) = squeeze(Reflectance(Y(y_ind,x_ind), X(y_ind,x_ind), :));
-                    
-                    dp = 5; % px, half-width of swatch extraction region (should be clear of border)
-                    
-                    y = (Y(y_ind,x_ind)-dp) : (Y(y_ind,x_ind)+dp);
-                    x = (X(y_ind,x_ind)-dp) : (X(y_ind,x_ind)+dp);
-                    
-                    SPD_extract = squeeze(SPD(y,x,:));
-                    sample_qty = size(SPD_extract,1) * size(SPD_extract,2);
-                    
-                    SPD_mesh(:,end+1) = sum(sum(SPD_extract,1),2) ./ sample_qty;
-                    
-                end
-            end
-            assignin('base','Reflectance', RE)
-            assignin('base','SPD_mesh',SPD_mesh)
-            
-            if size(SPD_mesh,2) == 24 % if checking the ColorChecker
-
-%                 %%% Correct RAW values according to their row, holding the
-%                 %%% black background as constant
-%
-%                 SPD_mesh_corrected = SPD_mesh;
-% 
-%                 % IMG_5562
-%                 correction.row  = 1:4;
-%                 correction.luminance = linspace(0.0424, 0.0322, length(correction.row));
-% 
-%                 correction.gain = 1 ./ correction.luminance;
-%                 correction.gain = correction.gain ./ min(correction.gain(:));
-%                 row = 1;
-% 
-%                 for s = 1 : size(SPD_mesh,2)
-% 
-%                     gain = interp1(correction.row, correction.gain, row);
-%                     SPD_mesh_corrected(:,s) = SPD_mesh_corrected(:,s) .* gain;
-% 
-%                     if s/6 == round(s/6) % if the last swatch in this row
-%                         row = row + 1; % go to the next row
-%                     end
-% 
-%                 end
-% 
-%                 %%%
-                
-                compare_SPDs(SPD_mesh)
-                
-            end
-            
-        end
-        
-        figure(9)
+        % Show mesh
+        figure(7)
             set(gcf,'Name','Reconstructed Image and Sample Mesh','NumberTitle','off')
             clf
             set(gcf,'color','white')
             hold on
             image(Image.RGB)
             
-%             title('Reconstructed Image and Sample Mesh')
             set(gca,'xtick',[])
             set(gca,'ytick',[])
             set(gca,'position',[0 0 1 1])
@@ -807,52 +640,84 @@ function hyperspectral_image_GUI
             axis equal
             axis tight
             set(gca,'YDir','reverse') % enforce standard directionality
-            scatter(X(:), Y(:), 75, 'wo','LineWidth',2)
-            scatter(X(:), Y(:), 75, 'ko','LineWidth',1)
             
-        figure(10)
+            % Show the mesh and sample windows
+            box_x = [1 1 -1 -1 1] / 2;
+            box_y = [1 -1 -1 1 1] / 2;
+            mesh_sample_window = str2double(get(Mesh_Sample_Window.handle, 'string')); % px, width of extraction region
+            box_x = box_x .* mesh_sample_window;
+            box_y = box_y .* mesh_sample_window;
+            box_x = round(box_x);
+            box_y = round(box_y);
+            for i = 1 : numel(X)
+                plot(X(i)+box_x, Y(i)+box_y, 'k')
+                plot(X(i)+box_x, Y(i)+box_y, 'w:')
+            end
+        
+        % Sample the HSDC
+        REF_sample = [];
+        SPD_sample = [];
+        RGB_sample = [];
+        mesh_sample_half_width = round(mesh_sample_window/2);
+        for y_ind = 1 : size(X,1)
+            for x_ind = 1 : size(X,2)
+                y = (Y(y_ind,x_ind)-mesh_sample_half_width) : (Y(y_ind,x_ind)+mesh_sample_half_width);
+                x = (X(y_ind,x_ind)-mesh_sample_half_width) : (X(y_ind,x_ind)+mesh_sample_half_width);
+                spd = squeeze(HSDC(y,x,:));
+                ref = squeeze(Reflectance(y,x,:));
+                rgb = squeeze(Image.RGB(y,x,:));
+                sample_qty = size(spd,1) * size(spd,2);
+                SPD_sample(:,end+1) = sum(sum(spd,1),2) ./ sample_qty;
+                REF_sample(:,end+1) = sum(sum(ref,1),2) ./ sample_qty;
+                col = zeros(1,3);
+                for cc = 1 : 3
+                    swatch = rgb(:,:,cc);
+                    col(1,cc) = mode(swatch(:));
+                end
+                RGB_sample(end+1,:) = col;
+            end
+        end
+        assignin('base', 'SPD_sample', SPD_sample)
+        assignin('base', 'REF_sample', REF_sample)
+        assignin('base', 'RGB_sample', RGB_sample)
+
+        if size(SPD_sample,2) == 24 % if checking the ColorChecker
+            compare_SPDs(SPD_sample)
+        end
+            
+        figure(8)
             set(gcf,'Name','SPDs and Colors at Sample Mesh','NumberTitle','off')
             clf
             set(gcf,'color','white')
             hold on
             for p = 1 : numel(X)
-                plot(Observer.lambda, squeeze(SPD(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
+                plot(Observer.lambda,SPD_sample(:,p),'Color',RGB_sample(p,:),'LineWidth',2)
             end
             xlim(lambda_lims)
             ylim([0 max(ylim)])
-            for s = 1 : length(Filter.stations)
-                plot(zeros(1,2)+Filter.stations(s), ylim, 'Color', zeros(1,3)+0.5)
-            end
+            set(gca,'XTick',Filter.CWL)
+            set(gca,'YTick',[])
             grid on
-            grid minor
             xlabel('Wavelength, nm')
-            ylabel('Spectral Power Distribution (SPD), ~')
-            set(gca,'FontSize',8)
-            set(gca,'yticklabel',{})
-%             title('SPDs and Colors at Sample Mesh')
+            ylabel('Spectral Power Distribution (HSDC), ~')
+            title('SPDs and Colors at Sample Mesh')
             
-        if get(Reflectance_Toggle.handle, 'value')
-            
-            figure(11)
-                set(gcf,'Name','Reflectances and Colors at Sample Mesh','NumberTitle','off')
-                clf
-                set(gcf,'color','white')
-                hold on
-                for p = 1 : numel(X)
-                    plot(Observer.lambda, squeeze(Reflectance(Y(p),X(p),:)),'Color',squeeze(Image.RGB(Y(p),X(p),:)),'LineWidth',2)
-                end
-                xlim(lambda_lims)
-                ylim([0 1])
-                for s = 1 : length(Filter.stations)
-                    plot(zeros(1,2)+Filter.stations(s), ylim, 'Color', zeros(1,3)+0.5)
-                end
-                grid on
-                grid minor
-                xlabel('Wavelength, nm')
-                ylabel('Reflectance, Relative, ~')
-                title('Reflectances and Colors at Sample Mesh')
-            
-        end
+        figure(9)
+            set(gcf,'Name','Reflectances and Colors at Sample Mesh','NumberTitle','off')
+            clf
+            set(gcf,'color','white')
+            hold on
+            for p = 1 : numel(X)
+                plot(Observer.lambda,REF_sample(:,p),'Color',RGB_sample(p,:),'LineWidth',2)
+            end
+            xlim(lambda_lims)
+            ylim([0 max(ylim)])
+            set(gca,'XTick',Filter.CWL)
+            set(gca,'YTick',[])
+            grid on
+            xlabel('Wavelength, nm')
+            ylabel('Reflectance, Relative, ~')
+            title('Reflectances and Colors at Sample Mesh')
             
         switch Image.mode
             case 'preview'
@@ -864,19 +729,15 @@ function hyperspectral_image_GUI
                 
                 fn_export = [
                                 regexprep(Photo.filename_first,'\..+','') '_' ...
-                                'hyperspectral_'...
+                                'spectral_'...
                                 num2str(max(size(Image.RGB))) '_px_'...
                                 timestamp...
                             ];
                         
                 imwrite(Image.RGB, [Photo.pathdir '\' fn_export '.jpg'], 'Quality', 100)
-                
-                figure(9)
-                    set(gcf, 'PaperPositionMode', 'auto')
-                    print(gcf,[Photo.pathdir '\' fn_export '_spectra'], '-dpng')
         end
 
-        % For debug purposes - send high-level structures to workspace
+        % Send structures to workspace
         assignin('base','Wavelength', Wavelength)
         assignin('base','Observer',   Observer)
         assignin('base','Photo',      Photo)
@@ -884,120 +745,8 @@ function hyperspectral_image_GUI
         assignin('base','Image',      Image)
         assignin('base','Camera',     Camera)
         assignin('base','Sensor',     Sensor)
-        assignin('base','SPD',        SPD)
+        assignin('base','HSDC',       HSDC)
 
-    end
-
-    %% GIF Export
-
-    function generate_GIF
-        
-        if ~isfield(Photo, 'RGB_calc')
-            warning('No photos loaded, cannot generate GIF')
-            return
-        end
-        if isempty(SPD)
-            warning('No image created, cannot generate GIF')
-            return
-        end
-        
-        lambda_vs_RGB = wavelength_vs_color(Wavelength); % get wavelength vs. color data
-        
-        % GIF parameters
-        fig_width    = 500; % px
-        fs           = 10; % font size
-        GIF_duration = str2double(get(GIF_Duration.handle, 'string')); % sec
-        GIF_fps      = length(Wavelength) / GIF_duration;
-        
-        timestamp = datestr(datetime('now'));
-        timestamp = regexprep(timestamp,':','-');
-        timestamp = regexprep(timestamp,' ','_');
-        
-        fn_GIF = regexprep(Photo.filename_first, '\..+',''); % strip off file extension
-        fn_GIF = [fn_GIF '_' timestamp '.GIF'];
-        
-        % Set value scale using CDF
-        thresh     = 0.95;
-        bin.qty    = 1000;
-        bin.edge   = linspace(0,max(SPD(:)),bin.qty);
-        bin.count  = histcounts(SPD(:));
-        bin.width  = abs(diff(bin.edge(1:2)));
-        bin.center = bin.edge(1:(end-1)) + bin.width/2;
-        bin.count  = bin.count ./ sum(bin.count);
-        bin.CDF    = cumsum(bin.count);
-        [val, ~]   = min(find(bin.CDF > thresh));
-        val_upr    = bin.center(val);
-        
-        figure(100) % temporary figure
-            clf
-            set(gcf,'color','white')
-            pos = get(gcf,'position');
-            aspect_ratio = size(SPD,2) / size(SPD,1); % width/height
-            set(gcf,'position',[pos(1), 150, fig_width.*[aspect_ratio, 1]])
-            set(gca,'position',[0.05 0.05 0.89 0.90])
-
-        for f = 1 : size(SPD,3) % for each wavelength
-
-            % Show wavelength slice
-            cla
-            hold on
-            pcolor(flipud(SPD(:,:,f)))
-            shading flat
-            axis equal
-            axis tight
-            axis off
-            colormap gray
-            
-            caxis([0, val_upr])
-            h = colorbar;
-            set(get(h,'label'),'string','Spectral Power Distribution, ~');
-            set(h,'FontSize',fs)
-            title(['Wavelength: ' num2str(Wavelength(f)) ' ± ' num2str(abs(diff(Wavelength(1:2)))/2) ' nm'])
-
-            % Show wavelength color
-            rect.width = size(SPD,2) / length(Observer.lambda); % px/nm
-            rect.height = 25; % px
-            rect.y_gap = 10; % px
-            rect.x = [1 1 -1 -1] .* rect.width/2;
-            rect.y = [1 0 0 1] .* rect.height - rect.height - rect.y_gap;
-            
-            target_lbl_qty = 10;
-            delta = 1;
-            while length(1:delta:length(Wavelength)) > target_lbl_qty
-                delta = delta + 1;
-            end
-            ind_show_lbl = 1 : delta : length(Wavelength);
-            
-            for w = 1 : size(lambda_vs_RGB, 1)
-                center = (Wavelength(w)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
-                center = center * (size(SPD,2)-rect.width) + rect.width/2;
-                fill(rect.x + center, rect.y, lambda_vs_RGB(w,:), 'EdgeColor','none')
-                if ismember(w, ind_show_lbl)
-                    text(center, min(rect.y), [num2str(Wavelength(w)) ' nm'], 'HorizontalAlignment','center','VerticalAlignment','top','FontSize',fs)
-                end
-            end
-
-            % Outline the current wavelength band
-            center = (Wavelength(f)-Wavelength(1)) / (Wavelength(end)-Wavelength(1)); % 0 to 1
-            center = center * (size(SPD,2)-rect.width) + rect.width/2;
-            plot([rect.x, rect.x(1)] + center, [rect.y, rect.y(1)], 'k', 'LineWidth', 2)
-
-            drawnow
-
-            % Capture the frame
-            frame = getframe(gcf); 
-            im = frame2im(frame); 
-            [imind,cm] = rgb2ind(im,256);
-            if f == 1
-                imwrite(imind,cm, [Photo.pathdir '\' fn_GIF],'gif', 'Loopcount',inf,'DelayTime',1/GIF_fps);
-            else 
-                imwrite(imind,cm, [Photo.pathdir '\' fn_GIF],'gif','WriteMode','append','DelayTime',1/GIF_fps); 
-            end
-
-        end
-        
-        close(figure(100))
-        
     end
 
     %%
@@ -1005,6 +754,11 @@ function hyperspectral_image_GUI
     function load_photos
         
         [Photo.filename_first, Photo.pathdir] = uigetfile('*.*','Select the first photo in the stack, corresponding to the first filter');
+        
+        if ~Photo.filename_first
+            warning('No photos loaded')
+            return
+        end
         
         % Generate sequential filenames for photo stack
         Photo.filenames = cell(Filter.qty, 1);
@@ -1021,7 +775,7 @@ function hyperspectral_image_GUI
         h = waitbar(0,'');
 
         Photo.qty = length(Photo.filenames);
-        Photo.RGB_calc    = cell(Photo.qty, 1); % for SPD calculation
+        Photo.RGB_calc    = cell(Photo.qty, 1); % for HSDC calculation
 
         % Load data from files
         for p = 1 : Photo.qty
@@ -1031,17 +785,6 @@ function hyperspectral_image_GUI
             waitbar(status,h,['Loading ' regexprep(Photo.filenames{p},'\_','\\_') '...'])
             
             [~, RGB_calc, ~] = extract_RAW_via_dcraw(Photo.pathdir, Photo.filenames{p}, 'rggb', '-D -4 -j -t 0', 0, 0, 0);
-
-%             %%%
-%             % Apply RAW Correction
-%             tic
-%             disp('Correcting...')
-%             load('RAW_Correction','RAW_Correction')
-%             for cc = 1 : 3
-%                 RGB_calc(:,:,cc) = interp1(RAW_Correction.x{cc}, RAW_Correction.y{cc}, double(RGB_calc(:,:,cc)));
-%             end
-%             toc
-%             %%%
 
             % Apply black offset
             RGB_calc = RGB_calc - Photo.RAW_black_level;
@@ -1056,8 +799,9 @@ function hyperspectral_image_GUI
 
         close(h)
                     
-        figure(7)
+        figure(5)
             clf
+            hold on
             set(gcf,'color','white')
             set(gcf,'Name','Photo Histograms','NumberTitle','off')
             
@@ -1066,28 +810,22 @@ function hyperspectral_image_GUI
             edges = -0.5 : (2^bit_depth-0.5);
             
             for p = 1 : Photo.qty
-                subplot(Photo.qty, 1, p)
-                    cla
-                    hold on
                 
                 for cc = 1 : 3
                     counts = histcounts(Photo.RGB_calc{p}(:,:,cc), edges);
                     col = [0 0 0];
                     col(cc) = 1;
-                    plot(centers, counts, 'Color', col)
-                end
-                
-                xlim([min(edges) max(edges)-Photo.RAW_black_level])
-                title(['\fontsize{9}\bf' num2str(p) ': \rm' regexprep(Photo.filenames{p},'_','\\_')])
-                grid on
-                grid minor
-                set(gca, 'yscale', 'log')
-                if p ~= Photo.qty
-                    set(gca,'xticklabel','')
-                    set(gca,'yticklabel','')
+                    plot(centers + Photo.RAW_black_level, counts, 'Color', col)
                 end
                 
             end
+            
+        xlabel('RAW Value, ~')
+        ylabel('Quantity of Pixels, ~')
+        xlim([0 max(edges)])
+        grid on
+        grid minor
+        set(gca, 'yscale', 'log')
             
         reset_figures
 
@@ -1102,80 +840,18 @@ function hyperspectral_image_GUI
         
         switch i_fil
             
-            case 1 % K&F Concept Qty. 9
-                Filter.lambda = 400 : 10 : 700; % nm
-                trans = [
-                                0.12991 0.06012 0.22094 0.00000 0.00000 0.81079 0.75450 0.76239 0.21410
-                                0.00000 0.00000 0.17517 0.00000 0.00000 0.73170 0.68230 0.66204 0.18158
-                                0.00000 0.00000 0.13734 0.00000 0.00000 0.72748 0.66095 0.61443 0.18780
-                                0.00000 0.16363 0.13943 0.00000 0.03485 0.75767 0.66860 0.56422 0.20044
-                                0.00000 0.11037 0.05988 0.00000 0.03315 0.74685 0.67105 0.51487 0.24000
-                                0.00000 0.08199 0.05822 0.00000 0.05863 0.74043 0.67079 0.43356 0.25564
-                                0.00000 0.12241 0.08121 0.13159 0.12214 0.75505 0.66901 0.39040 0.27825
-                                0.00000 0.06580 0.11365 0.27683 0.07705 0.70297 0.66177 0.34245 0.28888
-                                0.00000 0.10860 0.12021 0.42119 0.18192 0.66530 0.63684 0.29157 0.30514
-                                0.00000 0.14251 0.10139 0.52185 0.31138 0.56344 0.57788 0.24857 0.31988
-                                0.00000 0.00000 0.04623 0.60712 0.35015 0.47470 0.52756 0.19806 0.31964
-                                0.00000 0.05046 0.11175 0.66782 0.36388 0.44785 0.49013 0.17783 0.30950
-                                0.00000 0.00000 0.13602 0.71865 0.34276 0.36665 0.42512 0.13134 0.29983
-                                0.00000 0.10352 0.19798 0.75584 0.33698 0.17298 0.37433 0.13604 0.29375
-                                0.00000 0.14518 0.24737 0.78878 0.26565 0.14525 0.34235 0.18017 0.28176
-                                0.00000 0.20846 0.27690 0.82011 0.16851 0.00000 0.34121 0.23564 0.27728
-                                0.00000 0.29802 0.32283 0.86565 0.20948 0.16110 0.31783 0.23440 0.26902
-                                0.00000 0.43424 0.35216 0.89768 0.24630 0.00000 0.27465 0.34669 0.26981
-                                0.07643 0.57015 0.36024 0.91812 0.21910 0.00000 0.27053 0.51650 0.26389
-                                0.09684 0.74554 0.37979 0.93401 0.14799 0.16280 0.33423 0.74082 0.25081
-                                0.22063 0.87853 0.40309 0.94906 0.18789 0.05161 0.48794 0.87312 0.26190
-                                0.39856 0.95400 0.43810 0.95243 0.22605 0.00000 0.53475 0.94116 0.28203
-                                0.50359 0.97430 0.44359 0.95788 0.26379 0.00000 0.55511 0.96958 0.29195
-                                0.53191 0.97433 0.43784 0.95702 0.22394 0.08451 0.56885 0.98418 0.29249
-                                0.54251 0.96822 0.42454 0.95399 0.20340 0.10632 0.59733 0.98085 0.29771
-                                0.55944 0.95434 0.41800 0.95161 0.21796 0.24346 0.68232 0.97906 0.34429
-                                0.56860 0.95003 0.41088 0.95187 0.34145 0.37850 0.77989 0.97635 0.40604
-                                0.59063 0.95768 0.42438 0.95496 0.45178 0.55724 0.87441 0.98498 0.46372
-                                0.61425 0.96925 0.44288 0.96221 0.57013 0.74047 0.94096 0.98761 0.51462
-                                0.62726 0.97729 0.45564 0.96831 0.66522 0.84224 0.96527 0.98127 0.55205
-                                0.65049 0.98120 0.46861 0.97302 0.73649 0.91719 0.97997 0.99693 0.59505
-                            ];
-            case 2 % Roscolux 20120-10-04 Qty. 13
-                % Source: find_stacked_orthogonal_filter_set_2.m
-                Filter.lambda = 360 : 20 : 740;
-                trans = [
-                            0.2900	0.4500	0.4600	0.3500	0.2500	0.2100	0.1900	0.1000	0.0500	0.0400	0.0500	0.0600	0.1600	0.1700	0.1100	0.0900	0.0700	0.0900	0.2600	0.5500
-                            0.1656	0.2356	0.3160	0.4346	0.4452	0.3444	0.2241	0.1458	0.0858	0.0740	0.0432	0.0469	0.0340	0.0201	0.0134	0.0156	0.0340	0.1305	0.3696	0.5896
-                            0.0360	0.0750	0.1665	0.2760	0.4440	0.4898	0.3927	0.2345	0.1060	0.0306	0.0100	0.0016	0.0012	0.0008	0.0008	0.0176	0.0795	0.1824	0.2352	0.4263
-                            0.0570	0.0825	0.1215	0.1680	0.2812	0.4424	0.5005	0.4221	0.2756	0.1224	0.0460	0.0104	0.0048	0.0028	0.0024	0.0088	0.0315	0.1128	0.2016	0.4067
-                            0.0032	0.0140	0.0201	0.0000	0.0000	0.0255	0.3825	0.6468	0.5760	0.3905	0.1792	0.0792	0.0418	0.0259	0.0273	0.0301	0.0185	0.0364	0.0354	0.0924
-                            0.0304	0.1120	0.1206	0.0760	0.0656	0.0680	0.1360	0.3192	0.4800	0.4544	0.3192	0.1936	0.1254	0.0814	0.0585	0.0559	0.0407	0.0624	0.1416	0.3168
-                            0.1786	0.1408	0.0360	0.0050	0.0008	0.0024	0.0144	0.0608	0.1680	0.3968	0.4674	0.3740	0.2805	0.1892	0.1290	0.1118	0.0946	0.1032	0.2064	0.4128
-                            0.0420	0.0145	0.0024	0.0004	0.0005	0.0072	0.0858	0.2035	0.3245	0.4189	0.4264	0.3654	0.2640	0.1584	0.1056	0.0704	0.0623	0.0792	0.2200	0.4717
-                            0.1872	0.2162	0.1073	0.0252	0.0078	0.0234	0.1221	0.1036	0.0651	0.0840	0.0792	0.2223	0.3724	0.3234	0.2584	0.2250	0.1924	0.2280	0.3840	0.5796
-                            0.1464	0.2244	0.2272	0.1825	0.0888	0.0380	0.0158	0.0079	0.0079	0.0078	0.0228	0.1207	0.4080	0.5292	0.4664	0.4361	0.4183	0.4539	0.5696	0.6764
-                            0.0016	0.0289	0.1225	0.0900	0.0225	0.0025	0.0001	0.0000	0.0000	0.0000	0.0001	0.0009	0.0529	0.3844	0.6400	0.7225	0.7396	0.7396	0.7396	0.7396
-                            0.0070	0.0125	0.0098	0.0088	0.0145	0.0180	0.0154	0.0111	0.0055	0.0071	0.0000	0.0087	0.0264	0.0968	0.2816	0.5192	0.6764	0.7304	0.7480	0.7654
-                            0.1166	0.1155	0.0792	0.0468	0.0378	0.0567	0.1180	0.1160	0.1152	0.1089	0.0990	0.0804	0.0672	0.0704	0.0534	0.1780	0.5251	0.6942	0.7298	0.7476
-                        ]';
-                    
-            case 3 % Ideal Spikes 400-700 nm Qty. 13
-                Filter.lambda = 400 : 25 : 700;
-                trans = eye(length(Filter.lambda));
-                
-            case 4 % MidOpt FS100: BP470, BP525, BP590, BP635, BP660
-                % Source: https://midopt.com/filter-kits/fs100/
-                Filter.lambda = [350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990,1000,1010,1020,1030,1040,1050,1060,1070,1080,1090,1100];
-                trans = [0.0100000000000000,0.0100000000000000,0,0,0,0,4.03000000000000,71.6600000000000,93.5300000000000,92.8100000000000,93.7800000000000,95.9600000000000,96.8700000000000,96.9100000000000,95,45.7300000000000,3.40000000000000,0.490000000000000,0.250000000000000,0.440000000000000,0.360000000000000,0.200000000000000,0.230000000000000,0.320000000000000,0.280000000000000,0.320000000000000,0.300000000000000,0.310000000000000,0.280000000000000,0.0900000000000000,0.0400000000000000,0.0200000000000000,0.0300000000000000,0.0500000000000000,0.230000000000000,0.290000000000000,0.0900000000000000,0.0500000000000000,0.0300000000000000,0.0300000000000000,0.0600000000000000,0.0300000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0100000000000000,0.0200000000000000,0.0700000000000000,0.140000000000000,0.270000000000000,0.170000000000000,0.150000000000000,0.150000000000000,0.150000000000000,0.330000000000000,0.560000000000000,0.330000000000000,0.180000000000000,0.150000000000000,0.190000000000000,0.280000000000000,0.490000000000000,0.530000000000000,0.330000000000000,0.200000000000000,0.140000000000000,0.130000000000000,0.140000000000000,0.170000000000000,0.220000000000000,0.280000000000000,0.380000000000000,0.460000000000000;0,0.0100000000000000,0,0,0.0100000000000000,0,0,0.0100000000000000,0.0100000000000000,0,0.0100000000000000,0.0100000000000000,0.310000000000000,16.9900000000000,65.4400000000000,85.7800000000000,91.7800000000000,91.2300000000000,93.9400000000000,90.4400000000000,88.5600000000000,52.5200000000000,23.5200000000000,10.6000000000000,2.16000000000000,1.65000000000000,1.33000000000000,0.380000000000000,0.230000000000000,0.410000000000000,0.440000000000000,0.170000000000000,0.150000000000000,0.270000000000000,0.410000000000000,0.240000000000000,0.180000000000000,0.290000000000000,0.890000000000000,1.30000000000000,0.510000000000000,0.270000000000000,0.260000000000000,0.480000000000000,1.13000000000000,0.330000000000000,0.0800000000000000,0.0300000000000000,0.0300000000000000,0.0200000000000000,0.0200000000000000,0.0400000000000000,0.0500000000000000,0.0800000000000000,0.110000000000000,0.150000000000000,0.220000000000000,0.300000000000000,0.420000000000000,0.590000000000000,0.830000000000000,1.16000000000000,1.70000000000000,3.07000000000000,5.29000000000000,8.12000000000000,11.0100000000000,17.4700000000000,35.1000000000000,57.9800000000000,62.7800000000000,47.4000000000000,32.5900000000000,27.9900000000000,31.5300000000000,40.2400000000000;0,0,0,0,0.0100000000000000,0,0,0,0,0,0,0,0,0,0,0.0100000000000000,0.0100000000000000,0.0200000000000000,0.140000000000000,6.49000000000000,46.4200000000000,82.4600000000000,92.6400000000000,95.1300000000000,95.0400000000000,73.4700000000000,30.6200000000000,11.2400000000000,4.93000000000000,2.30000000000000,1.20000000000000,0.780000000000000,0.610000000000000,0.430000000000000,0.290000000000000,0.250000000000000,0.280000000000000,0.390000000000000,0.380000000000000,0.250000000000000,0.190000000000000,0.230000000000000,0.460000000000000,0.870000000000000,0.510000000000000,0.220000000000000,0.150000000000000,0.160000000000000,0.270000000000000,0.880000000000000,1.54000000000000,0.420000000000000,0.210000000000000,0.130000000000000,0.180000000000000,0.310000000000000,0.510000000000000,0.740000000000000,0.920000000000000,0.970000000000000,0.940000000000000,0.840000000000000,0.670000000000000,0.570000000000000,0.580000000000000,0.690000000000000,0.960000000000000,1.53000000000000,2.91000000000000,6.11000000000000,12.3300000000000,20.9700000000000,28.6400000000000,33.2400000000000,37.4700000000000,43.8400000000000;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0100000000000000,0.0200000000000000,0.0400000000000000,0.0600000000000000,0.0600000000000000,0.0700000000000000,0.220000000000000,2.26000000000000,18.1200000000000,56.0400000000000,85.2300000000000,94.8500000000000,96.6200000000000,97.1500000000000,88.9900000000000,47.6600000000000,14.5000000000000,3.55000000000000,1.41000000000000,0.850000000000000,0.760000000000000,0.980000000000000,1.32000000000000,1.02000000000000,0.600000000000000,0.470000000000000,0.570000000000000,0.940000000000000,1.19000000000000,0.710000000000000,0.430000000000000,0.350000000000000,0.460000000000000,0.910000000000000,1.44000000000000,0.780000000000000,0.410000000000000,0.280000000000000,0.200000000000000,0.180000000000000,0.310000000000000,0.680000000000000,2.01000000000000,1.74000000000000,0.610000000000000,0.280000000000000,0.220000000000000,0.190000000000000,0.190000000000000,0.210000000000000,0.310000000000000,0.470000000000000,0.860000000000000,1.47000000000000,1.88000000000000,1.69000000000000,1.36000000000000,1.16000000000000,1.10000000000000,1.18000000000000;0,0,0,0,0.0100000000000000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0100000000000000,0.0100000000000000,0.0300000000000000,0.0700000000000000,0.140000000000000,0.310000000000000,1.54000000000000,13.5500000000000,49.7700000000000,80.1400000000000,91.9300000000000,96.5300000000000,96.7400000000000,88.6200000000000,66.9900000000000,47.3000000000000,18.5400000000000,6.47000000000000,4.22000000000000,3.61000000000000,1.95000000000000,0.930000000000000,0.690000000000000,0.760000000000000,0.890000000000000,0.650000000000000,0.400000000000000,0.340000000000000,0.400000000000000,0.670000000000000,0.990000000000000,0.650000000000000,0.500000000000000,0.620000000000000,0.0900000000000000,0.970000000000000,0.390000000000000,0.620000000000000,1.97000000000000,1.67000000000000,0.490000000000000,0.260000000000000,0.160000000000000,0.130000000000000,0.140000000000000,0.210000000000000,0.370000000000000,0.770000000000000,1.39000000000000,1.73000000000000,1.53000000000000,1.20000000000000,1.07000000000000,1.17000000000000,1.61000000000000,2.49000000000000]' ./ 100;
-                
-            case 5 % ThorLabs Qty. 7 CWL 420:40:660 FWHM 10
+            case 1 % ThorLabs Qty. 7 CWL 420:40:660 FWHM 10
                 % Source: https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=1001
                 Filter.lambda = 400 : 700;
                 trans = [2.21000000000000e-05,2.98000000000000e-05,4.07000000000000e-05,5.89000000000000e-05,8.68000000000000e-05,0.000131200000000000,0.000203800000000000,0.000324000000000000,0.000534800000000000,0.000916700000000000,0.00163890000000000,0.00309110000000000,0.00623500000000000,0.0136615000000000,0.0324912000000000,0.0785535000000000,0.172248800000000,0.296812600000000,0.398243600000000,0.446206300000000,0.459848100000000,0.464594000000000,0.466664900000000,0.460771800000000,0.430465000000000,0.353831500000000,0.238815200000000,0.131262100000000,0.0632231000000000,0.0293616000000000,0.0144699000000000,0.00768930000000000,0.00435370000000000,0.00262290000000000,0.00165980000000000,0.00109390000000000,0.000750500000000000,0.000528400000000000,0.000383100000000000,0.000285000000000000,0.000217000000000000,0.000168500000000000,0.000133600000000000,0.000107700000000000,8.78000000000000e-05,7.27000000000000e-05,6.07000000000000e-05,5.18000000000000e-05,4.41000000000000e-05,3.82000000000000e-05,3.30000000000000e-05,2.88000000000000e-05,2.52000000000000e-05,2.21000000000000e-05,1.91000000000000e-05,1.69000000000000e-05,1.47000000000000e-05,1.28000000000000e-05,1.09000000000000e-05,9.39073000000000e-06,7.82692000000000e-06,6.46631000000000e-06,5.30541000000000e-06,4.31324000000000e-06,3.41719000000000e-06,2.76791000000000e-06,2.18426000000000e-06,1.74204000000000e-06,1.30541000000000e-06,9.96426000000000e-07,8.40049000000000e-07,6.75697000000000e-07,6.67512000000000e-07,3.89520000000000e-07,3.22122000000000e-07,3.30175000000000e-07,2.79410000000000e-07,2.02608000000000e-07,2.01289000000000e-07,8.84422000000000e-08,1.26780000000000e-07,3.34598000000000e-08,1.08271000000000e-07,2.75169000000000e-08,1.47191000000000e-08,3.91010000000000e-08,6.92919000000000e-08,3.21909000000000e-08,8.08530000000000e-08,4.61416000000000e-08,2.05703000000000e-08,2.86560000000000e-09,3.64677000000000e-08,4.22954000000000e-08,4.79363000000000e-08,7.42813000000000e-08,3.49286000000000e-08,4.85940000000000e-08,1.79683000000000e-08,1.47372000000000e-08,2.23314000000000e-08,9.75664000000000e-08,4.04398000000000e-08,8.09969000000000e-08,3.57951000000000e-08,6.45438000000000e-08,2.25838000000000e-07,9.69028000000000e-10,4.19517000000000e-08,3.14931000000000e-08,1.86060000000000e-08,1.50359000000000e-08,2.90056000000000e-08,2.07900000000000e-08,6.58814000000000e-08,2.09268000000000e-08,3.84710000000000e-08,5.77587000000000e-08,1.18365000000000e-08,1.21130000000000e-07,1.11171000000000e-07,2.48292000000000e-08,5.64341000000000e-08,4.89572000000000e-08,1.64511000000000e-07,1.39890000000000e-07,1.12905000000000e-07,1.75333000000000e-07,1.60846000000000e-07,3.36982000000000e-07,4.30853000000000e-07,4.80584000000000e-07,6.39672000000000e-07,7.19533000000000e-07,8.27276000000000e-07,9.87276000000000e-07,1.14085000000000e-06,1.08723000000000e-06,1.01654000000000e-06,1.01211000000000e-06,8.88743000000000e-07,7.85382000000000e-07,8.01450000000000e-07,6.64915000000000e-07,5.98281000000000e-07,6.58727000000000e-07,5.75165000000000e-07,5.62469000000000e-07,5.63702000000000e-07,4.88017000000000e-07,5.07321000000000e-07,6.32392000000000e-07,4.56881000000000e-07,5.24140000000000e-07,4.18093000000000e-07,4.04769000000000e-07,3.89481000000000e-07,4.35647000000000e-07,5.20002000000000e-07,4.50243000000000e-07,3.30136000000000e-07,4.28404000000000e-07,4.09574000000000e-07,4.03846000000000e-07,3.84441000000000e-07,3.45414000000000e-07,4.26489000000000e-07,3.30230000000000e-07,5.13962000000000e-07,3.64004000000000e-07,1.91183000000000e-07,3.68529000000000e-07,3.88422000000000e-07,2.63713000000000e-07,3.63659000000000e-07,3.46040000000000e-07,3.39948000000000e-07,1.60294000000000e-07,3.25194000000000e-07,3.89460000000000e-07,2.66250000000000e-07,3.08836000000000e-07,1.66108000000000e-07,2.86201000000000e-07,2.92749000000000e-07,3.61762000000000e-07,1.81554000000000e-07,3.86045000000000e-07,3.18256000000000e-07,2.06445000000000e-07,3.70438000000000e-07,3.86025000000000e-07,2.51378000000000e-07,4.30886000000000e-07,4.23523000000000e-07,3.55561000000000e-07,3.74872000000000e-07,3.14677000000000e-07,4.72178000000000e-07,4.28798000000000e-07,3.76364000000000e-07,5.48958000000000e-07,4.42382000000000e-07,5.17914000000000e-07,5.80243000000000e-07,7.46196000000000e-07,6.19891000000000e-07,6.63146000000000e-07,8.35288000000000e-07,8.50810000000000e-07,9.36175000000000e-07,1.00706000000000e-06,1.05346000000000e-06,1.22626000000000e-06,1.34275000000000e-06,1.66207000000000e-06,1.83125000000000e-06,2.04209000000000e-06,2.36565000000000e-06,2.81151000000000e-06,3.17754000000000e-06,3.74624000000000e-06,4.26692000000000e-06,4.90167000000000e-06,5.32740000000000e-06,5.53764000000000e-06,5.41749000000000e-06,4.94108000000000e-06,4.43876000000000e-06,3.60135000000000e-06,2.97082000000000e-06,2.40839000000000e-06,1.99871000000000e-06,1.59855000000000e-06,1.32186000000000e-06,1.05588000000000e-06,7.23383000000000e-07,7.13933000000000e-07,5.61107000000000e-07,5.06875000000000e-07,4.66548000000000e-07,3.66491000000000e-07,2.97419000000000e-07,1.42805000000000e-07,2.17747000000000e-07,2.38276000000000e-07,1.79728000000000e-07,2.40603000000000e-07,1.26927000000000e-07,1.72766000000000e-07,1.02187000000000e-07,1.07387000000000e-07,7.60186000000000e-08,7.96176000000000e-08,1.00563000000000e-08,1.12674000000000e-07,6.25546000000000e-08,8.95008000000000e-08,3.50961000000000e-08,3.64649000000000e-08,8.43364000000000e-08,7.35831000000000e-08,1.04313000000000e-07,6.38197000000000e-08,7.92807000000000e-08,1.27499000000000e-07,2.13633000000000e-08,2.44218000000000e-09,7.79074000000000e-08,1.44022000000000e-08,1.91008000000000e-07,4.75540000000000e-08,1.07381000000000e-07,3.83294000000000e-08,8.43420000000000e-08,2.35422000000000e-08,1.28660000000000e-08,1.90962000000000e-08,1.73666000000000e-07,5.21983000000000e-08,6.58180000000000e-08,7.21989000000000e-08,2.22302000000000e-08,2.90398000000000e-08,6.80881000000000e-08,1.08733000000000e-08,3.55680000000000e-09,3.19897000000000e-10,1.38990000000000e-07,1.82840000000000e-08,6.42646000000000e-08,3.79448000000000e-08,4.78746000000000e-08,6.10201000000000e-09,1.45120000000000e-07,7.95888000000000e-08,5.25488000000000e-08,5.95137000000000e-08,5.22600000000000e-08,9.30844000000000e-09,5.31344000000000e-08;1.32519000000000e-07,9.68735000000000e-08,5.27532000000000e-08,1.20221000000000e-07,2.03264000000000e-07,1.11613000000000e-07,1.54213000000000e-07,1.54790000000000e-07,1.11477000000000e-07,2.72904000000000e-07,2.31616000000000e-07,9.12712000000000e-08,4.42560000000000e-07,4.40121000000000e-07,6.40576000000000e-07,6.08434000000000e-07,1.02159000000000e-06,1.42689000000000e-06,2.00303000000000e-06,2.65362000000000e-06,3.87672000000000e-06,5.28067000000000e-06,6.75513000000000e-06,8.61403000000000e-06,1.06000000000000e-05,1.23000000000000e-05,1.45000000000000e-05,1.67000000000000e-05,1.94000000000000e-05,2.23000000000000e-05,2.64000000000000e-05,3.06000000000000e-05,3.60000000000000e-05,4.28000000000000e-05,5.18000000000000e-05,6.29000000000000e-05,7.71000000000000e-05,9.67000000000000e-05,0.000123100000000000,0.000159300000000000,0.000211500000000000,0.000285900000000000,0.000398700000000000,0.000570500000000000,0.000836800000000000,0.00128250000000000,0.00203380000000000,0.00336840000000000,0.00586120000000000,0.0106956000000000,0.0207026000000000,0.0415495000000000,0.0824256000000000,0.152174000000000,0.246987400000000,0.346481400000000,0.429402800000000,0.491058400000000,0.537131200000000,0.562729000000000,0.560809300000000,0.526506000000000,0.459293700000000,0.363517500000000,0.254775400000000,0.157262400000000,0.0810770000000000,0.0450252000000000,0.0236363000000000,0.0129891000000000,0.00755270000000000,0.00456950000000000,0.00289830000000000,0.00192040000000000,0.00131060000000000,0.000924600000000000,0.000670300000000000,0.000498400000000000,0.000380400000000000,0.000294600000000000,0.000233900000000000,0.000188400000000000,0.000155200000000000,0.000129200000000000,0.000109100000000000,9.37000000000000e-05,8.14000000000000e-05,7.12000000000000e-05,6.32000000000000e-05,5.67000000000000e-05,5.13000000000000e-05,4.70000000000000e-05,4.28000000000000e-05,4.01000000000000e-05,3.76000000000000e-05,3.53000000000000e-05,3.36000000000000e-05,3.19000000000000e-05,3.07000000000000e-05,2.95000000000000e-05,2.85000000000000e-05,2.72000000000000e-05,2.58000000000000e-05,2.42000000000000e-05,2.25000000000000e-05,2.01000000000000e-05,1.82000000000000e-05,1.57000000000000e-05,1.32000000000000e-05,1.09000000000000e-05,8.77965000000000e-06,7.09216000000000e-06,5.60360000000000e-06,4.30567000000000e-06,3.48760000000000e-06,2.71323000000000e-06,2.07951000000000e-06,1.75171000000000e-06,1.33431000000000e-06,1.00014000000000e-06,8.27554000000000e-07,7.85381000000000e-07,5.75663000000000e-07,4.44493000000000e-07,3.59425000000000e-07,3.12068000000000e-07,3.15305000000000e-07,2.44900000000000e-07,1.42578000000000e-07,1.64712000000000e-07,1.40788000000000e-07,1.28619000000000e-07,1.42000000000000e-07,6.83090000000000e-08,4.76190000000000e-08,9.29127000000000e-08,2.09375000000000e-07,9.07012000000000e-08,5.08132000000000e-08,1.43703000000000e-07,1.10781000000000e-07,7.16378000000000e-08,2.89424000000000e-08,8.95953000000000e-08,3.38357000000000e-08,6.22928000000000e-08,1.07864000000000e-07,1.13299000000000e-07,1.25365000000000e-07,1.59364000000000e-07,6.98623000000000e-09,8.31647000000000e-08,2.54674000000000e-08,5.41863000000000e-08,7.38865000000000e-08,8.13181000000000e-08,1.05306000000000e-07,1.02178000000000e-07,1.00102000000000e-07,1.26121000000000e-07,5.81436000000000e-08,2.05267000000000e-07,2.12838000000000e-07,2.39723000000000e-07,2.62541000000000e-07,2.02540000000000e-07,3.64394000000000e-07,4.55715000000000e-07,7.94191000000000e-07,8.05031000000000e-07,1.05399000000000e-06,1.72315000000000e-06,2.11911000000000e-06,2.25905000000000e-06,2.33154000000000e-06,1.94490000000000e-06,1.57591000000000e-06,1.03790000000000e-06,9.37816000000000e-07,7.06222000000000e-07,4.95446000000000e-07,4.45379000000000e-07,3.61999000000000e-07,1.38314000000000e-07,2.93606000000000e-07,2.85927000000000e-07,6.78435000000000e-08,1.50359000000000e-07,1.23820000000000e-07,3.66175000000000e-08,2.46236000000000e-07,1.60994000000000e-07,2.15431000000000e-08,1.60163000000000e-07,1.90357000000000e-07,7.45029000000000e-09,1.49551000000000e-07,2.01809000000000e-08,1.53105000000000e-07,7.09557000000000e-08,7.91870000000000e-08,8.10906000000000e-08,2.06922000000000e-08,1.60384000000000e-07,1.21210000000000e-07,2.15329000000000e-07,5.50988000000000e-08,8.34507000000000e-08,2.01543000000000e-07,1.37781000000000e-07,6.55547000000000e-08,1.34459000000000e-07,9.32683000000000e-08,7.33681000000000e-08,1.39189000000000e-07,2.27571000000000e-07,8.26262000000000e-08,3.98630000000000e-08,6.97255000000000e-08,1.67707000000000e-07,6.24939000000000e-08,1.06759000000000e-08,2.86457000000000e-08,6.44031000000000e-08,3.86876000000000e-08,6.24898000000000e-08,1.59416000000000e-08,6.87167000000000e-09,1.67106000000000e-08,5.14414000000000e-08,4.66926000000000e-08,6.61626000000000e-08,6.99930000000000e-08,2.73044000000000e-08,3.40922000000000e-08,1.36899000000000e-08,1.03898000000000e-07,3.47447000000000e-08,8.50037000000000e-08,3.04913000000000e-08,6.12374000000000e-09,1.63100000000000e-08,5.89955000000000e-08,1.23240000000000e-07,2.79955000000000e-08,1.54716000000000e-08,1.09928000000000e-07,3.20621000000000e-08,2.38190000000000e-08,1.94528000000000e-08,5.23629000000000e-09,6.19100000000000e-08,6.40803000000000e-08,3.51040000000000e-08,1.87983000000000e-09,1.75897000000000e-08,2.12522000000000e-08,6.67588000000000e-08,5.74410000000000e-09,3.72808000000000e-08,2.23602000000000e-09,7.41440000000000e-08,1.20601000000000e-08,7.47888000000000e-09,4.31392000000000e-08,9.45541000000000e-08,7.15866000000000e-09,1.10342000000000e-08,3.69569000000000e-08,2.54424000000000e-08,5.62994000000000e-08,2.29323000000000e-08,2.83139000000000e-08,2.47380000000000e-08,1.25890000000000e-07,2.38663000000000e-08,1.53136000000000e-08,1.06723000000000e-08,6.72500000000000e-08,1.64584000000000e-08,1.12954000000000e-08,1.50011000000000e-07,4.79684000000000e-08,3.27102000000000e-09,6.95343000000000e-08,7.21246000000000e-10,2.24003000000000e-09,3.08615000000000e-08,1.33983000000000e-07,4.51697000000000e-08,5.71993000000000e-09,1.63399000000000e-07,3.27635000000000e-08,3.71415000000000e-08,9.62415000000000e-08,5.99955000000000e-08,3.77846000000000e-08,1.07133000000000e-07,8.72827000000000e-08,4.07232000000000e-08,4.26948000000000e-08;8.25440000000000e-06,7.71878000000000e-06,7.38498000000000e-06,7.63726000000000e-06,8.39454000000000e-06,9.49296000000000e-06,1.14000000000000e-05,1.38000000000000e-05,1.67000000000000e-05,1.90000000000000e-05,1.95000000000000e-05,1.79000000000000e-05,1.60000000000000e-05,1.39000000000000e-05,1.25000000000000e-05,1.22000000000000e-05,1.34000000000000e-05,1.72000000000000e-05,2.49000000000000e-05,3.50000000000000e-05,3.63000000000000e-05,2.52000000000000e-05,1.22000000000000e-05,5.07109000000000e-06,2.55225000000000e-06,1.36401000000000e-06,9.08997000000000e-07,5.62080000000000e-07,4.59433000000000e-07,1.79843000000000e-07,3.03923000000000e-07,2.11326000000000e-07,1.77427000000000e-07,1.04793000000000e-07,1.97620000000000e-07,1.70135000000000e-07,1.26322000000000e-07,1.35704000000000e-07,1.09676000000000e-07,2.02748000000000e-07,2.12420000000000e-07,1.24320000000000e-07,8.76778000000000e-08,4.70050000000000e-08,8.13336000000000e-08,6.28846000000000e-08,2.29344000000000e-07,9.49326000000000e-08,1.35614000000000e-07,1.70252000000000e-07,9.49133000000000e-08,1.98529000000000e-07,1.31297000000000e-07,2.17013000000000e-08,1.83654000000000e-07,1.91341000000000e-07,2.87801000000000e-07,2.64384000000000e-07,1.91403000000000e-07,3.05821000000000e-07,2.56379000000000e-07,3.43562000000000e-07,4.76382000000000e-07,4.67901000000000e-07,6.67089000000000e-07,6.16006000000000e-07,9.00844000000000e-07,1.14160000000000e-06,1.36360000000000e-06,1.72270000000000e-06,2.17215000000000e-06,2.72240000000000e-06,3.65322000000000e-06,4.60744000000000e-06,5.90388000000000e-06,7.92153000000000e-06,2.32400000000000e-05,2.53500000000000e-05,3.27400000000000e-05,7.60600000000000e-05,9.39800000000000e-05,0.000123490000000000,0.000241680000000000,0.000333500000000000,0.000523460000000000,0.000807620000000000,0.00127940000000000,0.00206805000000000,0.00360045000000000,0.00640946000000000,0.0124271000000000,0.0241520900000000,0.0484719000000000,0.0974299100000000,0.179457090000000,0.287493160000000,0.389686360000000,0.456287960000000,0.488112880000000,0.500050700000000,0.500228460000000,0.489473820000000,0.465439310000000,0.419903440000000,0.343305310000000,0.242873920000000,0.145857750000000,0.0778225900000000,0.0394893400000000,0.0204859400000000,0.0112261700000000,0.00617960000000000,0.00370304000000000,0.00231982000000000,0.00146126000000000,0.000995310000000000,0.000621440000000000,0.000455610000000000,0.000316400000000000,0.000237280000000000,0.000133910000000000,0.000105490000000000,3.69100000000000e-05,6.32500000000000e-05,2.10800000000000e-05,1.89700000000000e-05,1.15000000000000e-05,9.41670000000000e-06,7.80358000000000e-06,6.48056000000000e-06,5.49119000000000e-06,4.44745000000000e-06,3.96568000000000e-06,3.21598000000000e-06,2.77735000000000e-06,2.37636000000000e-06,2.05477000000000e-06,1.79761000000000e-06,1.39479000000000e-06,1.19707000000000e-06,1.06467000000000e-06,8.67553000000000e-07,7.32059000000000e-07,6.49027000000000e-07,6.13493000000000e-07,5.80720000000000e-07,4.62681000000000e-07,3.57792000000000e-07,3.73858000000000e-07,2.90061000000000e-07,2.23899000000000e-07,2.10622000000000e-07,1.50710000000000e-07,1.84845000000000e-07,1.97023000000000e-07,1.81133000000000e-07,1.67910000000000e-07,1.19454000000000e-07,1.60728000000000e-07,1.18029000000000e-07,1.53203000000000e-07,1.85258000000000e-07,1.38427000000000e-07,4.58816000000000e-08,6.07563000000000e-08,1.50220000000000e-07,1.41005000000000e-07,1.05145000000000e-08,1.29258000000000e-07,2.96833000000000e-08,5.70713000000000e-08,7.06634000000000e-08,1.08631000000000e-07,5.03078000000000e-08,1.11714000000000e-07,2.85650000000000e-08,4.08274000000000e-08,1.07728000000000e-07,1.78417000000000e-08,1.20799000000000e-07,5.44811000000000e-08,7.51771000000000e-08,7.62948000000000e-08,8.25019000000000e-09,1.89439000000000e-07,1.32929000000000e-07,7.06633000000000e-08,9.44174000000000e-08,5.01253000000000e-08,7.76524000000000e-08,1.45874000000000e-08,2.39090000000000e-10,8.01043000000000e-08,7.99418000000000e-08,1.17841000000000e-08,7.63786000000000e-08,8.19833000000000e-08,7.06348000000000e-08,6.13402000000000e-08,9.89444000000000e-08,7.51821000000000e-08,1.12286000000000e-07,3.76751000000000e-09,9.09182000000000e-08,6.09027000000000e-08,7.61029000000000e-08,2.79187000000000e-08,2.35396000000000e-08,8.10931000000000e-08,3.33054000000000e-08,7.47391000000000e-08,5.14032000000000e-09,8.43462000000000e-08,7.54489000000000e-08,4.09350000000000e-08,2.09785000000000e-07,1.30262000000000e-08,5.10047000000000e-08,6.65896000000000e-08,4.93723000000000e-08,1.80275000000000e-07,5.69523000000000e-08,2.64979000000000e-09,7.96112000000000e-08,8.47812000000000e-09,6.40228000000000e-08,1.00951000000000e-07,2.51738000000000e-08,7.66084000000000e-08,7.60585000000000e-08,7.78685000000000e-08,1.71361000000000e-07,5.00843000000000e-08,1.54228000000000e-07,1.26486000000000e-07,1.78372000000000e-07,2.79712000000000e-07,2.00473000000000e-07,1.92585000000000e-07,3.20683000000000e-07,1.98704000000000e-07,1.93798000000000e-07,6.18389000000000e-08,6.38138000000000e-08,1.93743000000000e-07,8.72895000000000e-08,1.39997000000000e-07,1.26521000000000e-07,9.54250000000000e-08,1.13875000000000e-07,4.63201000000000e-08,2.12126000000000e-08,1.28109000000000e-07,3.20902000000000e-08,6.17872000000000e-08,3.05742000000000e-09,5.61922000000000e-08,5.12276000000000e-10,8.84077000000000e-08,6.75028000000000e-08,4.44987000000000e-08,2.37031000000000e-08,6.96470000000000e-08,8.97236000000000e-08,4.59912000000000e-08,1.06934000000000e-07,1.46866000000000e-07,5.86296000000000e-08,3.01919000000000e-08,8.31564000000000e-08,1.38286000000000e-07,9.48066000000000e-09,2.29110000000000e-08,1.37506000000000e-07,6.95183000000000e-08,1.96846000000000e-07,5.37979000000000e-08,2.62443000000000e-08,2.17139000000000e-07,1.29611000000000e-08,1.01409000000000e-07,7.14053000000000e-08,1.99708000000000e-07,6.52817000000000e-08,3.27498000000000e-08,1.45251000000000e-07,5.18816000000000e-08,3.08198000000000e-08,1.81639000000000e-07,8.66641000000000e-08,1.64827000000000e-08,2.03254000000000e-07,3.70624000000000e-09,6.09671000000000e-08,1.11411000000000e-07,1.60521000000000e-07,2.82621000000000e-08,6.77459000000000e-08,2.07364000000000e-07,3.53817000000000e-08,3.34794000000000e-08;0.000335100000000000,0.000301200000000000,0.000270500000000000,0.000242500000000000,0.000218800000000000,0.000197200000000000,0.000178800000000000,0.000161700000000000,0.000148800000000000,0.000136600000000000,0.000129000000000000,0.000122200000000000,0.000118300000000000,0.000115200000000000,0.000115400000000000,0.000115500000000000,0.000115400000000000,0.000114000000000000,0.000109400000000000,0.000101700000000000,9.20000000000000e-05,8.11000000000000e-05,6.98000000000000e-05,5.99000000000000e-05,5.25000000000000e-05,4.63000000000000e-05,4.25000000000000e-05,3.99000000000000e-05,3.92000000000000e-05,3.91000000000000e-05,3.99000000000000e-05,4.04000000000000e-05,4.01000000000000e-05,3.78000000000000e-05,3.34000000000000e-05,2.77000000000000e-05,2.19000000000000e-05,1.74000000000000e-05,1.33000000000000e-05,1.09000000000000e-05,8.92235000000000e-06,7.86337000000000e-06,7.27124000000000e-06,7.02258000000000e-06,7.19869000000000e-06,8.05426000000000e-06,1.02000000000000e-05,1.52000000000000e-05,2.66000000000000e-05,4.30000000000000e-05,4.87000000000000e-05,3.44000000000000e-05,1.57000000000000e-05,6.12135000000000e-06,3.03883000000000e-06,1.61918000000000e-06,1.08964000000000e-06,7.01913000000000e-07,4.42846000000000e-07,4.38211000000000e-07,3.06906000000000e-07,1.87406000000000e-07,2.75692000000000e-07,1.53769000000000e-07,2.57158000000000e-07,1.03202000000000e-07,1.53499000000000e-07,2.23344000000000e-07,9.01169000000000e-08,1.02278000000000e-07,3.14040000000000e-08,8.11734000000000e-08,1.48707000000000e-07,1.39641000000000e-07,6.27657000000000e-08,1.86745000000000e-07,9.12414000000000e-08,1.75803000000000e-07,3.19830000000000e-08,3.39530000000000e-08,1.63263000000000e-07,1.17590000000000e-07,6.37580000000000e-08,8.61546000000000e-08,8.65095000000000e-08,1.54727000000000e-07,6.32976000000000e-08,1.08148000000000e-07,1.75607000000000e-07,1.27101000000000e-07,1.70471000000000e-07,1.64389000000000e-07,2.18320000000000e-07,1.97713000000000e-07,1.98658000000000e-07,2.18836000000000e-07,3.01194000000000e-07,4.17136000000000e-07,4.78094000000000e-07,4.33200000000000e-07,4.69083000000000e-07,6.70741000000000e-07,7.52608000000000e-07,9.52326000000000e-07,1.11379000000000e-06,1.45813000000000e-06,1.87577000000000e-06,2.26867000000000e-06,2.89083000000000e-06,3.82016000000000e-06,5.05463000000000e-06,6.51062000000000e-06,8.78799000000000e-06,1.18000000000000e-05,1.58000000000000e-05,2.15000000000000e-05,2.95000000000000e-05,4.07000000000000e-05,5.67000000000000e-05,7.98000000000000e-05,0.000114300000000000,0.000164700000000000,0.000242100000000000,0.000363900000000000,0.000557400000000000,0.000871700000000000,0.00141530000000000,0.00237560000000000,0.00417620000000000,0.00764650000000000,0.0148830000000000,0.0311347000000000,0.0683101000000000,0.146210100000000,0.273052500000000,0.417522000000000,0.523739500000000,0.569553700000000,0.576882200000000,0.568575800000000,0.553457300000000,0.526931000000000,0.470881300000000,0.371038800000000,0.243378200000000,0.133147700000000,0.0652275000000000,0.0313597000000000,0.0157161000000000,0.00836700000000000,0.00474220000000000,0.00283200000000000,0.00174870000000000,0.00112670000000000,0.000747500000000000,0.000507900000000000,0.000356300000000000,0.000255600000000000,0.000187000000000000,0.000140100000000000,0.000106000000000000,8.16000000000000e-05,6.38000000000000e-05,5.03000000000000e-05,4.02000000000000e-05,3.24000000000000e-05,2.66000000000000e-05,2.15000000000000e-05,1.81000000000000e-05,1.50000000000000e-05,1.28000000000000e-05,1.09000000000000e-05,9.31451000000000e-06,8.14544000000000e-06,7.06779000000000e-06,6.10959000000000e-06,5.32662000000000e-06,4.74711000000000e-06,4.20688000000000e-06,3.91695000000000e-06,3.41862000000000e-06,3.01327000000000e-06,2.72138000000000e-06,2.47106000000000e-06,2.38301000000000e-06,2.00919000000000e-06,1.66555000000000e-06,1.76138000000000e-06,1.53801000000000e-06,1.27842000000000e-06,1.30299000000000e-06,1.09475000000000e-06,1.05305000000000e-06,1.01742000000000e-06,8.28450000000000e-07,7.50773000000000e-07,7.14086000000000e-07,6.13151000000000e-07,5.93743000000000e-07,4.09220000000000e-07,4.80290000000000e-07,4.68909000000000e-07,4.02930000000000e-07,3.01819000000000e-07,2.55219000000000e-07,3.60626000000000e-07,2.16012000000000e-07,2.43341000000000e-07,2.31473000000000e-07,1.13665000000000e-07,1.87249000000000e-07,1.73213000000000e-07,1.38035000000000e-07,2.20282000000000e-07,1.22113000000000e-07,2.02670000000000e-07,6.35637000000000e-08,4.93192000000000e-09,1.34023000000000e-07,5.70260000000000e-08,1.60291000000000e-07,1.25197000000000e-07,4.96665000000000e-08,1.04227000000000e-07,5.22792000000000e-09,9.42783000000000e-08,6.47904000000000e-08,2.82331000000000e-08,6.73882000000000e-08,1.54468000000000e-08,3.23560000000000e-08,6.31426000000000e-08,6.95455000000000e-09,4.57724000000000e-08,1.62978000000000e-07,8.31210000000000e-09,6.18781000000000e-08,1.04600000000000e-07,1.04486000000000e-08,1.11023000000000e-07,5.00406000000000e-09,8.80561000000000e-08,5.05673000000000e-08,1.31880000000000e-07,1.51068000000000e-07,1.39866000000000e-08,5.30855000000000e-09,1.28532000000000e-07,4.60879000000000e-08,5.77434000000000e-08,1.51543000000000e-08,6.86088000000000e-10,3.87609000000000e-08,2.64698000000000e-08,1.33986000000000e-07,1.52446000000000e-08,1.62863000000000e-08,9.08075000000000e-08,8.49934000000000e-08,1.69894000000000e-08,4.05704000000000e-09,2.09602000000000e-08,3.00990000000000e-08,1.43058000000000e-08,7.32856000000000e-09,4.01655000000000e-08,1.47820000000000e-07,3.77267000000000e-08,4.56308000000000e-08,2.55472000000000e-08,1.72082000000000e-07,5.03419000000000e-08,7.64137000000000e-08,3.20220000000000e-08,1.64951000000000e-07,6.21910000000000e-08,7.78342000000000e-08,2.89835000000000e-08,1.27228000000000e-07,2.66096000000000e-09,7.00784000000000e-08,3.70283000000000e-08,1.64323000000000e-07,4.45264000000000e-08,2.33814000000000e-08,1.69444000000000e-07,3.60606000000000e-08,1.13191000000000e-08,1.76415000000000e-07,5.14608000000000e-08,8.83094000000000e-08,1.16154000000000e-07,3.04574000000000e-08,1.05794000000000e-08,4.02535000000000e-08,1.30128000000000e-07,8.56497000000000e-08,1.34308000000000e-08,1.83961000000000e-07,4.37082000000000e-08,3.25727000000000e-08;1.27405000000000e-07,6.61373000000000e-08,1.05168000000000e-07,9.40834000000000e-08,6.19679000000000e-08,1.18221000000000e-07,5.16625000000000e-08,1.18323000000000e-07,6.30805000000000e-08,7.41808000000000e-08,6.43883000000000e-08,7.28618000000000e-08,1.19762000000000e-07,1.25872000000000e-08,9.85668000000000e-08,7.90059000000000e-08,4.90435000000000e-08,9.00969000000000e-08,5.29221000000000e-08,8.24978000000000e-08,1.31001000000000e-07,4.84195000000000e-08,6.69275000000000e-08,8.42424000000000e-09,2.51185000000000e-08,5.95209000000000e-08,1.26200000000000e-07,4.20524000000000e-08,3.93038000000000e-09,1.90472000000000e-08,1.80202000000000e-07,8.66406000000000e-08,1.68107000000000e-08,3.61468000000000e-08,5.15949000000000e-08,2.12254000000000e-07,5.57809000000000e-08,9.01386000000000e-09,6.70873000000000e-08,1.45059000000000e-07,8.41764000000000e-08,1.22094000000000e-07,9.18331000000000e-08,5.82698000000000e-08,5.94915000000000e-08,1.23349000000000e-08,1.12876000000000e-07,1.23419000000000e-07,1.36698000000000e-07,8.07327000000000e-08,5.06434000000000e-08,2.91926000000000e-08,6.87706000000000e-08,8.16559000000000e-08,6.05935000000000e-08,9.55258000000000e-08,5.24078000000000e-08,9.68213000000000e-08,9.52213000000000e-08,1.68256000000000e-07,2.06082000000000e-07,1.73587000000000e-07,1.97860000000000e-07,8.15569000000000e-08,1.15059000000000e-07,1.65407000000000e-07,1.34783000000000e-07,1.84360000000000e-07,1.35440000000000e-07,2.94779000000000e-07,2.70919000000000e-07,1.62770000000000e-07,1.22791000000000e-07,1.28819000000000e-07,2.41604000000000e-07,2.06009000000000e-07,2.07334000000000e-07,3.31648000000000e-07,3.07199000000000e-07,2.90546000000000e-07,1.73345000000000e-07,1.04928000000000e-07,4.83951000000000e-08,7.79915000000000e-08,3.89457000000000e-08,9.26042000000000e-08,4.15864000000000e-08,4.74629000000000e-08,2.39381000000000e-08,6.63961000000000e-08,2.80312000000000e-08,1.65807000000000e-08,4.44255000000000e-08,3.09835000000000e-08,6.49618000000000e-08,7.37612000000000e-08,2.36262000000000e-08,2.36126000000000e-10,3.01086000000000e-08,3.74743000000000e-08,1.93782000000000e-08,1.62967000000000e-07,5.73924000000000e-08,4.60859000000000e-09,5.76888000000000e-08,1.09558000000000e-08,3.51588000000000e-09,4.80678000000000e-09,2.79073000000000e-10,4.14473000000000e-08,5.39678000000000e-08,7.83593000000000e-08,2.66125000000000e-08,6.02783000000000e-08,6.38653000000000e-08,1.99945000000000e-08,2.28495000000000e-08,3.22931000000000e-08,1.40982000000000e-08,5.03651000000000e-08,6.42675000000000e-08,2.17846000000000e-09,1.61269000000000e-08,2.05689000000000e-08,6.71145000000000e-08,7.80082000000000e-09,5.33068000000000e-08,6.75151000000000e-09,2.72832000000000e-09,2.67139000000000e-08,9.61481000000000e-08,2.60670000000000e-08,1.55002000000000e-07,8.23878000000000e-10,9.60602000000000e-08,5.86729000000000e-08,7.90744000000000e-08,2.28907000000000e-07,1.34009000000000e-07,1.42335000000000e-07,2.15318000000000e-07,2.28217000000000e-07,2.54539000000000e-07,4.08951000000000e-07,4.56468000000000e-07,7.10063000000000e-07,9.48876000000000e-07,1.14611000000000e-06,1.60426000000000e-06,2.22512000000000e-06,2.99576000000000e-06,4.15568000000000e-06,5.71424000000000e-06,8.00649000000000e-06,1.12000000000000e-05,1.55000000000000e-05,2.12000000000000e-05,2.91000000000000e-05,4.03000000000000e-05,5.59000000000000e-05,7.80000000000000e-05,0.000110500000000000,0.000158700000000000,0.000230200000000000,0.000341800000000000,0.000524300000000000,0.000835600000000000,0.00137400000000000,0.00236900000000000,0.00432350000000000,0.00836860000000000,0.0176434000000000,0.0400335000000000,0.0936216000000000,0.199991500000000,0.343882800000000,0.461721900000000,0.520060300000000,0.545697900000000,0.566132900000000,0.582429200000000,0.587477600000000,0.574678300000000,0.525402900000000,0.416985100000000,0.270482700000000,0.139567800000000,0.0662912000000000,0.0305382000000000,0.0149230000000000,0.00790830000000000,0.00442270000000000,0.00263620000000000,0.00165020000000000,0.00107810000000000,0.000729200000000000,0.000504700000000000,0.000357900000000000,0.000259300000000000,0.000192200000000000,0.000145300000000000,0.000111900000000000,8.70000000000000e-05,6.92000000000000e-05,5.55000000000000e-05,4.51000000000000e-05,3.72000000000000e-05,3.10000000000000e-05,2.60000000000000e-05,2.18000000000000e-05,1.86000000000000e-05,1.60000000000000e-05,1.38000000000000e-05,1.19000000000000e-05,1.05000000000000e-05,9.43210000000000e-06,8.34203000000000e-06,7.26519000000000e-06,6.56724000000000e-06,5.90878000000000e-06,5.37461000000000e-06,4.78343000000000e-06,4.31541000000000e-06,4.08582000000000e-06,3.63699000000000e-06,3.39491000000000e-06,3.18914000000000e-06,2.99680000000000e-06,2.75121000000000e-06,2.46158000000000e-06,2.29808000000000e-06,2.21647000000000e-06,1.90718000000000e-06,1.92036000000000e-06,1.74835000000000e-06,1.58198000000000e-06,1.56113000000000e-06,1.47214000000000e-06,1.34834000000000e-06,1.20977000000000e-06,1.17367000000000e-06,9.70003000000000e-07,9.97696000000000e-07,9.07885000000000e-07,9.20512000000000e-07,7.87469000000000e-07,7.11023000000000e-07,6.95809000000000e-07,5.53683000000000e-07,5.44335000000000e-07,5.05724000000000e-07,4.66090000000000e-07,4.75304000000000e-07,3.68967000000000e-07,4.89344000000000e-07,2.98463000000000e-07,3.41653000000000e-07,3.15294000000000e-07,2.73014000000000e-07,2.28440000000000e-07,2.44676000000000e-07,1.89754000000000e-07,2.17484000000000e-07,1.99742000000000e-07,1.53119000000000e-07,1.93895000000000e-07,1.55539000000000e-07,2.52935000000000e-07,1.57331000000000e-07,1.08131000000000e-07,1.62185000000000e-07,2.26637000000000e-07,1.42815000000000e-07,1.63835000000000e-07,1.12674000000000e-07,3.25114000000000e-07,1.19616000000000e-07,2.09501000000000e-07,1.84168000000000e-07,2.67369000000000e-07,1.86267000000000e-07,1.21533000000000e-07,2.98437000000000e-07,2.29882000000000e-07,1.72101000000000e-07,3.16782000000000e-07,2.23901000000000e-07,2.57427000000000e-07,4.27823000000000e-07,2.74351000000000e-07,2.85470000000000e-07,4.38473000000000e-07,5.31911000000000e-07,5.07178000000000e-07,4.11426000000000e-07,7.05582000000000e-07,7.40529000000000e-07,8.62314000000000e-07,1.27495000000000e-06,1.42757000000000e-06,1.70310000000000e-06;8.43110000000000e-09,4.67722000000000e-08,6.84230000000000e-08,2.61865000000000e-08,4.42569000000000e-08,2.54873000000000e-08,2.93571000000000e-08,3.03741000000000e-08,4.98204000000000e-08,3.19525000000000e-08,2.19027000000000e-08,9.85296000000000e-08,6.78285000000000e-08,7.10162000000000e-08,7.81312000000000e-08,1.41937000000000e-07,6.18076000000000e-08,1.21017000000000e-08,8.88913000000000e-08,3.92840000000000e-08,5.96903000000000e-08,5.34592000000000e-08,1.16939000000000e-07,2.56502000000000e-08,5.79673000000000e-08,7.39275000000000e-08,1.14880000000000e-08,2.22491000000000e-08,8.05106000000000e-09,1.12760000000000e-07,8.93272000000000e-08,2.62668000000000e-08,3.12964000000000e-08,9.41967000000000e-08,1.77694000000000e-09,4.97746000000000e-08,1.74396000000000e-08,3.77341000000000e-08,9.96065000000000e-08,2.69687000000000e-08,5.63137000000000e-08,2.47935000000000e-08,8.34473000000000e-09,5.67702000000000e-08,1.31242000000000e-07,4.89852000000000e-08,2.09153000000000e-08,1.13702000000000e-07,3.50827000000000e-08,4.79396000000000e-08,7.78049000000000e-08,2.50927000000000e-08,4.40313000000000e-08,2.44039000000000e-08,1.15046000000000e-07,3.50845000000000e-08,2.09759000000000e-08,1.12563000000000e-08,3.63701000000000e-08,1.28050000000000e-07,1.66727000000000e-08,1.08021000000000e-09,7.50083000000000e-08,1.82691000000000e-08,7.43380000000000e-08,5.95292000000000e-09,1.35362000000000e-08,4.16818000000000e-08,4.28611000000000e-08,2.37261000000000e-08,4.89093000000000e-08,1.65019000000000e-08,1.75686000000000e-08,3.41971000000000e-09,5.42858000000000e-08,1.30751000000000e-07,1.26905000000000e-08,4.60641000000000e-08,6.30126000000000e-08,2.38214000000000e-08,4.02519000000000e-08,2.81496000000000e-08,2.66102000000000e-08,6.13690000000000e-08,1.87949000000000e-09,6.52409000000000e-08,1.96902000000000e-08,5.51851000000000e-09,3.51425000000000e-08,1.22297000000000e-08,1.85185000000000e-08,5.19318000000000e-08,1.92431000000000e-09,4.89710000000000e-08,4.75137000000000e-08,7.51202000000000e-08,5.02372000000000e-08,2.23882000000000e-09,5.62608000000000e-08,1.03739000000000e-07,1.83789000000000e-08,1.23351000000000e-08,3.49136000000000e-08,2.38105000000000e-08,2.58647000000000e-08,3.26889000000000e-08,1.05203000000000e-07,1.10929000000000e-08,6.15723000000000e-09,2.89057000000000e-08,2.26151000000000e-08,5.74459000000000e-08,1.48800000000000e-08,3.28845000000000e-08,4.24309000000000e-08,1.88398000000000e-08,2.42936000000000e-08,7.84567000000000e-08,8.68114000000000e-09,5.40724000000000e-08,5.69663000000000e-09,6.76733000000000e-08,4.19357000000000e-08,1.71887000000000e-09,1.25082000000000e-07,7.36096000000000e-09,5.47037000000000e-08,5.74032000000000e-08,1.00495000000000e-07,2.53138000000000e-08,7.32120000000000e-08,2.81173000000000e-08,2.33947000000000e-08,6.76852000000000e-08,4.50815000000000e-09,1.30693000000000e-07,3.84348000000000e-08,2.17673000000000e-08,1.25573000000000e-08,2.16383000000000e-08,6.16838000000000e-08,4.70570000000000e-08,3.00691000000000e-08,8.87312000000000e-08,4.36696000000000e-09,1.52548000000000e-07,1.12286000000000e-08,8.62033000000000e-08,5.42476000000000e-08,3.02327000000000e-08,1.19726000000000e-07,1.00804000000000e-07,3.82707000000000e-08,1.23985000000000e-07,1.06129000000000e-07,7.23300000000000e-08,1.73688000000000e-07,1.22991000000000e-07,2.48846000000000e-07,1.65884000000000e-07,2.63766000000000e-07,2.23683000000000e-07,3.01427000000000e-07,2.96163000000000e-07,3.33611000000000e-07,3.88106000000000e-07,5.58888000000000e-07,4.32108000000000e-07,6.31834000000000e-07,5.66822000000000e-07,7.67632000000000e-07,9.08622000000000e-07,9.15802000000000e-07,1.03292000000000e-06,1.35054000000000e-06,1.34611000000000e-06,1.48869000000000e-06,1.79701000000000e-06,2.14505000000000e-06,2.27847000000000e-06,2.62166000000000e-06,2.79698000000000e-06,3.45419000000000e-06,3.74800000000000e-06,4.37322000000000e-06,4.79560000000000e-06,5.77969000000000e-06,6.57822000000000e-06,7.68842000000000e-06,8.99776000000000e-06,1.08000000000000e-05,1.27000000000000e-05,1.53000000000000e-05,1.83000000000000e-05,2.23000000000000e-05,2.78000000000000e-05,3.47000000000000e-05,4.41000000000000e-05,5.65000000000000e-05,7.34000000000000e-05,9.71000000000000e-05,0.000130200000000000,0.000177200000000000,0.000245300000000000,0.000349500000000000,0.000508000000000000,0.000758000000000000,0.00116670000000000,0.00187440000000000,0.00316860000000000,0.00567710000000000,0.0109402000000000,0.0225544000000000,0.0500902000000000,0.114063700000000,0.234557000000000,0.382301300000000,0.497943400000000,0.545451600000000,0.551811400000000,0.544192500000000,0.529845400000000,0.513413600000000,0.500199500000000,0.470442000000000,0.386288300000000,0.252140000000000,0.119176100000000,0.0561785000000000,0.0248051000000000,0.0116417000000000,0.00595570000000000,0.00326640000000000,0.00189340000000000,0.00115890000000000,0.000732600000000000,0.000481500000000000,0.000324600000000000,0.000224600000000000,0.000158700000000000,0.000112900000000000,8.16000000000000e-05,6.00000000000000e-05,4.44000000000000e-05,3.36000000000000e-05,2.54000000000000e-05,1.92000000000000e-05,1.49000000000000e-05,1.17000000000000e-05,9.02781000000000e-06,7.14605000000000e-06,5.60704000000000e-06,4.50274000000000e-06,3.55883000000000e-06,2.86774000000000e-06,2.23599000000000e-06,1.82185000000000e-06,1.51243000000000e-06,1.30442000000000e-06,9.99929000000000e-07,8.02879000000000e-07,6.75683000000000e-07,6.02494000000000e-07,4.59423000000000e-07,3.82546000000000e-07,4.05968000000000e-07,2.85131000000000e-07,3.69780000000000e-07,1.65283000000000e-07,1.87411000000000e-07,1.44094000000000e-07,2.69771000000000e-07,1.20985000000000e-07,8.63500000000000e-08,8.17203000000000e-08,1.63913000000000e-07,8.82316000000000e-08,5.04810000000000e-08,6.81551000000000e-08,1.70585000000000e-07,6.12022000000000e-08,3.19954000000000e-08,1.37844000000000e-07,2.21065000000000e-08,2.22466000000000e-09,1.51001000000000e-07,1.15706000000000e-08,5.28436000000000e-08,1.13248000000000e-07,5.88687000000000e-08,2.07533000000000e-08,2.84072000000000e-08,1.60437000000000e-07,1.30140000000000e-07,4.91392000000000e-08,6.58659000000000e-08,7.80016000000000e-08,3.72685000000000e-08,1.06315000000000e-07,3.15052000000000e-08,5.89717000000000e-08;7.58767000000000e-08,1.03266000000000e-07,4.43913000000000e-08,7.03195000000000e-08,8.60849000000000e-08,1.82248000000000e-08,7.10021000000000e-08,4.60095000000000e-08,4.37355000000000e-08,1.51792000000000e-07,5.90629000000000e-09,3.85287000000000e-10,6.31287000000000e-08,5.90067000000000e-08,4.73286000000000e-08,9.71778000000000e-08,8.39550000000000e-08,8.05243000000000e-08,9.97183000000000e-08,9.12333000000000e-08,7.72285000000000e-09,8.69646000000000e-09,4.75649000000000e-08,8.65936000000000e-09,2.29922000000000e-08,5.87535000000000e-08,1.83923000000000e-08,2.63557000000000e-08,5.81901000000000e-08,4.59076000000000e-08,4.81082000000000e-08,2.43935000000000e-08,5.14593000000000e-09,6.45555000000000e-08,4.54200000000000e-08,1.51584000000000e-07,1.02282000000000e-07,1.92589000000000e-08,7.66705000000000e-08,3.44115000000000e-09,1.77039000000000e-08,1.70815000000000e-08,5.60753000000000e-08,2.67243000000000e-08,1.74157000000000e-07,1.40951000000000e-08,3.14127000000000e-08,6.79768000000000e-09,4.04916000000000e-08,1.84522000000000e-09,2.47392000000000e-08,5.73460000000000e-08,4.14622000000000e-09,3.60051000000000e-08,8.11795000000000e-08,3.33823000000000e-08,5.97095000000000e-08,2.41677000000000e-08,3.99943000000000e-08,4.91277000000000e-08,6.99776000000000e-09,3.44684000000000e-08,4.65443000000000e-09,3.87898000000000e-08,1.76795000000000e-08,9.21052000000000e-09,4.01368000000000e-08,5.64139000000000e-08,5.24867000000000e-08,1.18336000000000e-08,4.67230000000000e-08,9.51853000000000e-09,2.83293000000000e-08,3.15380000000000e-08,2.53605000000000e-08,7.33159000000000e-08,1.07967000000000e-08,5.80345000000000e-09,3.61965000000000e-08,1.90666000000000e-08,5.52238000000000e-08,5.66950000000000e-08,7.67269000000000e-08,8.33328000000000e-08,1.82566000000000e-08,1.06889000000000e-07,5.68305000000000e-08,3.99499000000000e-08,4.37930000000000e-08,7.41770000000000e-08,4.45964000000000e-08,5.21264000000000e-08,2.16231000000000e-08,4.61832000000000e-08,6.55048000000000e-08,6.69455000000000e-08,2.87928000000000e-08,4.59589000000000e-08,1.08518000000000e-07,9.46160000000000e-08,1.46169000000000e-08,5.53431000000000e-08,7.75313000000000e-08,2.87238000000000e-09,3.48676000000000e-08,1.66265000000000e-08,5.80674000000000e-08,1.99941000000000e-08,1.80397000000000e-08,5.18452000000000e-08,2.68773000000000e-08,6.29434000000000e-08,5.48231000000000e-08,7.54721000000000e-09,6.53712000000000e-08,6.57700000000000e-08,1.96530000000000e-08,1.62893000000000e-07,3.94059000000000e-08,2.12147000000000e-08,3.77112000000000e-08,1.48524000000000e-08,6.12322000000000e-08,6.43520000000000e-09,1.59632000000000e-08,2.83673000000000e-09,1.09489000000000e-08,7.73805000000000e-08,2.11822000000000e-08,1.79817000000000e-08,8.08445000000000e-08,3.11710000000000e-08,4.23516000000000e-08,1.84480000000000e-08,5.75871000000000e-08,1.37538000000000e-07,5.37464000000000e-08,5.72727000000000e-08,4.74928000000000e-08,2.83703000000000e-08,3.47000000000000e-08,4.13299000000000e-08,9.93172000000000e-09,4.22345000000000e-08,3.12063000000000e-08,8.17297000000000e-08,2.41198000000000e-08,2.46478000000000e-08,6.23017000000000e-08,9.38535000000000e-08,6.16858000000000e-08,4.22007000000000e-08,2.17814000000000e-08,1.94677000000000e-08,2.08902000000000e-08,6.19784000000000e-08,1.16725000000000e-07,1.44330000000000e-08,1.03429000000000e-07,9.29733000000000e-09,6.08912000000000e-08,5.58146000000000e-08,4.87273000000000e-09,1.04620000000000e-07,2.29993000000000e-08,5.17495000000000e-08,8.74838000000000e-08,4.47215000000000e-08,1.29041000000000e-08,7.19977000000000e-08,2.69392000000000e-08,1.04704000000000e-07,7.04223000000000e-08,2.22238000000000e-09,1.78619000000000e-09,1.20070000000000e-08,1.84211000000000e-08,5.96587000000000e-08,2.15163000000000e-08,3.92548000000000e-08,3.10323000000000e-08,3.77868000000000e-08,1.42975000000000e-07,5.48379000000000e-09,1.06339000000000e-07,2.88572000000000e-08,1.39876000000000e-07,4.10469000000000e-08,4.54070000000000e-08,1.00902000000000e-07,5.09183000000000e-09,8.99079000000000e-08,3.24469000000000e-08,8.98390000000000e-09,1.43793000000000e-07,3.93131000000000e-08,2.52532000000000e-09,1.14893000000000e-07,6.19119000000000e-08,1.17994000000000e-07,1.68663000000000e-09,3.12291000000000e-08,6.92089000000000e-08,2.62571000000000e-08,4.22918000000000e-08,1.36553000000000e-07,2.36919000000000e-09,4.76382000000000e-08,1.47049000000000e-07,1.27253000000000e-07,2.08074000000000e-07,1.53410000000000e-07,2.30674000000000e-07,2.90773000000000e-07,3.31076000000000e-07,4.48402000000000e-07,6.36410000000000e-07,5.61694000000000e-07,8.05164000000000e-07,9.72078000000000e-07,1.32283000000000e-06,1.62285000000000e-06,1.99874000000000e-06,2.68839000000000e-06,3.40240000000000e-06,4.24880000000000e-06,5.45737000000000e-06,7.01303000000000e-06,9.07609000000000e-06,1.14000000000000e-05,1.46000000000000e-05,1.89000000000000e-05,2.42000000000000e-05,3.14000000000000e-05,4.02000000000000e-05,5.24000000000000e-05,6.87000000000000e-05,9.03000000000000e-05,0.000119800000000000,0.000160900000000000,0.000220500000000000,0.000308100000000000,0.000436600000000000,0.000632400000000000,0.000939700000000000,0.00143870000000000,0.00228530000000000,0.00375690000000000,0.00653030000000000,0.0119758000000000,0.0233640000000000,0.0480601000000000,0.101863700000000,0.204375200000000,0.348854900000000,0.477507500000000,0.551232000000000,0.577157400000000,0.583270700000000,0.580360900000000,0.571665300000000,0.560552000000000,0.541246200000000,0.486288300000000,0.373324800000000,0.232762000000000,0.118707200000000,0.0559726000000000,0.0267588000000000,0.0135520000000000,0.00735070000000000,0.00421740000000000,0.00253470000000000,0.00159910000000000,0.00104090000000000,0.000699800000000000,0.000482600000000000,0.000340400000000000,0.000246500000000000,0.000181200000000000,0.000135800000000000,0.000103400000000000,7.97000000000000e-05,6.23000000000000e-05,4.89000000000000e-05,3.89000000000000e-05,3.12000000000000e-05,2.54000000000000e-05,2.10000000000000e-05,1.73000000000000e-05,1.41000000000000e-05,1.21000000000000e-05,1.01000000000000e-05,8.58105000000000e-06,7.27520000000000e-06,6.37344000000000e-06,5.29397000000000e-06,4.53176000000000e-06,4.07826000000000e-06,3.38781000000000e-06,2.88571000000000e-06]';
                 
-            case 6 % No Filter(s)
+            case 2 % No Filter(s)
                 Filter.lambda = [400, 700];
                 trans = [1; 1];
                 
             otherwise
-                error('No other filters supported yet')
+                error('Unrecognized filter selection')
+                
         end
         
         Filter.qty = size(trans,2);
@@ -1184,70 +860,38 @@ function hyperspectral_image_GUI
         Filter.T_orig   = trans;
         Filter.lam_orig = Filter.lambda;
         
-        % Idealize each filter as an ideal "spike", preventing overlap.
-        % This is best for narrow-bandpass filters, ~5-15 nm FWHM.
-        Filter.stations = zeros(Filter.qty,1);
+        % Calculate CWL of each filter
+        Filter.CWL = zeros(Filter.qty,1);
         CWL_res = get(CWL_Res.handle, 'string');
         CWL_res = str2double(CWL_res);
         for f = 1 : Filter.qty
-            CWL = sum(Filter.lambda' .* trans(:,f)) / sum(trans(:,f)); % weighted average
+            [~, ind] = max(trans(:,f));
+            CWL = Filter.lambda(ind);
             CWL = round(CWL / CWL_res) * CWL_res;
-            Filter.stations(f) = CWL;
+            Filter.CWL(f) = CWL;
         end
-                
-        [Filter.stations, Filter.ind_stations] = intersect(Wavelength, Filter.stations);
+        [~, Filter.ind_CWL] = intersect(Wavelength, Filter.CWL);
+        if length(Filter.ind_CWL) ~= Filter.qty
+            error('Filter CWL(s) not contained within wavelength domain')
+        end
         
-        % Resample and derive properties
-        Filter.T = zeros(length(Wavelength), Filter.qty);
-        Filter.XYZ = nan(Filter.qty, 3);
-        Filter.RGB = nan(Filter.qty, 3);
-        for f = 1 : size(trans,2)
-            Filter.T(:,f) = interp1(Filter.lambda, trans(:,f), Wavelength);
-            for cc = 1 : 3
-                Filter.XYZ(f,cc) = sum(Observer.sensitivity(:,cc) .* Filter.T(:,f));
-            end
-        end
-        Filter.XYZ = Filter.XYZ ./ max(Filter.XYZ(:)) .* 0.50;
-        for f = 1 : Filter.qty
-            Filter.RGB(f,:) = xyz2rgb(Filter.XYZ(f,:));
-        end
-        Filter.RGB(Filter.RGB<0) = 0;
-        Filter.RGB(Filter.RGB>1) = 1;
-        Filter.lambda = Wavelength;
-        
-        figure(5)
+        figure(4)
             set(gcf,'Name','Filter Transmission Spectra','NumberTitle','off')
             clf
             hold on
             set(gcf,'color','white')
+            x = Filter.lam_orig;
             for f = 1 : Filter.qty
-                plot(Filter.lambda, Filter.T(:,f), 'Color', Filter.RGB(f,:),'LineWidth',2)
+                y = Filter.T_orig(:,f);
+                plot(x, y, 'k')
+                text(Filter.CWL(f), max(Filter.T_orig(:))+0.01, [num2str(f)], 'HorizontalAlignment','center', 'VerticalAlignment','bottom')
             end
+            set(gca,'xtick', Filter.CWL)
             ylim([0 1])
             grid on
             grid minor
             xlabel('Wavelength, nm')
             ylabel('Transmission, 0-1, ~')
-            title(['Filter: ' Filter.description])
-            
-        figure(4)
-            set(gcf,'Name','Filter Colors','NumberTitle','off')
-            clf
-            hold on
-            set(gcf,'color','white')
-            th = 0 : 1 : 360;
-            scale = 0.9;
-            x = cosd(th)/2 .* scale;
-            y = sind(th)/2 .* scale;
-            
-            for f = 1 : Filter.qty
-                fill(f+x, y, Filter.RGB(f,:), 'EdgeColor', zeros(1,3)+0.20, 'LineWidth', 3)
-            end
-            axis equal
-            axis tight
-            set(gca,'XTick',1:Filter.qty)
-            set(gca,'YTick',[])
-            set(gca,'position',[0.025 0.025 0.95 0.95])
             title(['Filter: ' Filter.description])
         
     end
@@ -1306,7 +950,7 @@ function hyperspectral_image_GUI
             ylim([0 max(ylim)])
             legend({'$\bar{x}$','$\bar{y}$','$\bar{z}$'},'location','northeast','Interpreter','Latex','FontSize',12)
             
-        update_filters % update filter color
+        update_filters
         
     end
 
@@ -1491,7 +1135,7 @@ function hyperspectral_image_GUI
                     0.033016 0.35254 0.49797 0.60149 0.65736 0.78336 0.73926 0.776 0.72276 0.61365 0.4557 0.30535 0.17946 0.12249 0.073361 0.04487 0.020265 0.012304 0.0085751 0.0064746 0.0032885 0.002511 0.0020362 0.0023356 0.0027482 0.0036074 0.0036988 0.0031634 0.0022407 0.00069044 0.00012112 6.3737e-05 4.2452e-05
                     ];
             case 29 % Canon 650D
-                    cam_sen = [0.0610583241620830,0.313735926944791,2.79787615816815;0.0343274921646836,0.971188259964969,5.15734430619803;0.270419402108050,5.35540926143072,3.61424258382123;0.809747894358056,5.91532403148741,0.749048920868526;3.02836316223996,4.19684130064274,0.268982183236393;2.68879876771154,0.561676977042141,0.0697519135247612;1.11683073291645,0.137218600013737,0.0605268868566701]';
+                    cam_sen = [0.0592701667127317,0.313027139239136,2.78908583395609;0.0283438233949440,0.972172595414418,5.16182128673788;0.265858027995478,5.34243538332240,3.61315079556403;0.807650839855656,5.91305309212547,0.746756609541909;3.02777833934224,4.19228869445417,0.272080097992987;2.68907744488519,0.562506352120694,0.0700661833495584;1.11652449163423,0.136516309494670,0.0616344079310329]';
                     Camera.lambda = 420 : 40 : 660;
                 
         end

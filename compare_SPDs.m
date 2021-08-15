@@ -37,7 +37,6 @@ function compare_SPDs(SPD_est)
     O = csvread([Observer.path '\' Observer.filename]);
     Observer.lambda = O(:,1);
     Observer.responses = O(:,2:end);
-    Observer.Lab_JND = 2.3; % "just noticeable difference" in CIE76 color difference; source: https://en.wikipedia.org/wiki/Color_difference
     Observer.grayscale_weights = [0.21 0.72 0.07]; % RGB luminosity weighting
     
     % Illuminant
@@ -174,18 +173,21 @@ function compare_SPDs(SPD_est)
     RGB_act(RGB_act>1) = 1;
     RGB_est(RGB_est>1) = 1;
     
-    JND = dE ./ Observer.Lab_JND;
+    dE
     
     %%
+    
+
     
     figure(105)
         clf
         set(gcf,'color','white')
         pos = get(gcf,'position');
-        set(gcf,'position',[pos(1) 200 1000 600])
-        set(gcf, 'Renderer', 'opengl')
+        set(gcf,'position',[pos(1) 200 950 750])
+%         set(gcf, 'Renderer', 'opengl')
         
         for s = 1 : qty
+%             subplot_tight(4,6,s)
             subplot(4,6,s)
             hold on
             
@@ -216,12 +218,13 @@ function compare_SPDs(SPD_est)
 %                 plot([0 0]+stations(c), ylim, ':', 'Color', zeros(1,3)+1)
 %             end
             
-            grid on
+%             grid on
+            axis square
             set(gca,'XTick', stations)
             set(gca,'XTickLabel',{})
             set(gca,'YTick', [])
             
-            text(min(xlim), max(ylim), ['\bf' num2str(s) ': \rm' num2str(round(dE(s)*100)/100) ' \DeltaE'],'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',12)
+            text(min(xlim), max(ylim), ['\bf' num2str(s) ': \rm' num2str(round(dE(s)*100)/100) ' \DeltaE_{00}'],'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',12)
             
         end
         

@@ -284,34 +284,6 @@
     % Apply black offset
     Value_Measured = Value_Measured - Photo.RAW_black_level;
     
-    %% EXPERIMENT - RAW Correction by enforcing constant background
-    
-%     %%% EXPERIMENT - correct RAW values according to their row, holding the
-%     %%% black music stand as equal top-to-bottom
-%     
-%     % IMG_5562
-%     correction.row  = 1:4;
-%     correction.luminance = linspace(0.0424, 0.0322, length(correction.row));
-%     
-%     correction.gain = 1 ./ correction.luminance;
-%     correction.gain = correction.gain ./ min(correction.gain(:));
-%     row = 1;
-%     
-%     for s = 1 : Swatch.qty
-%         
-%         gain = interp1(correction.row, correction.gain, row);
-%         Value_Measured(:,:,s) = Value_Measured(:,:,s) .* gain;
-%         
-%         if s/Swatch.dim(2) == round(s/Swatch.dim(2)) % if the last swatch in this row
-%             row = row + 1; % go to the next row
-%         end
-%         
-%     end
-    
-    %%%
-    
-    %%
-    
     %% Calculate actual values from illuminant, reflectance, filter
     
     % Row:    wavelength
@@ -421,32 +393,21 @@
         xlabel('RAW Value, With Black Offset')
         ylabel('Is Active, 0-1')
         
-    %% Work backwards to see if we can make a sensible RAW correction curve
+    %% Work backwards to validate sensitivies
     
     % We take sensitivity as true, and V_A as true. We then ask what is the
     % value for V_M, assuming these?
-    
-%     ind_w  = 1:7;
-%     ind_cc = 1:3;
-    
-%     S_ = Sensitivity_Mean;
-%     S_(ind_w,ind_cc) = S_(ind_w,ind_cc) * 1;
     
     Sensitivity_Repeated = repmat(Sensitivity_Mean, [1,1,Swatch.qty]);
     
     Value_Expected = Value_Actual .* Sensitivity_Repeated;
     
-    for s = 5%1 : Swatch.qty
+    for s = 19%1 : Swatch.qty
 
         figure(555)
         clf
         hold on
         set(gcf,'color','white')
-
-%         x = Value_Measured(:,:,19);
-%         y = Value_Expected(:,:,19);
-%         x = x(:);
-%         y = y(:);
 
         x = Value_Expected(:);
         y = Value_Measured(:);
@@ -460,15 +421,6 @@
         grid minor
 
         plot([0 max(xlim)], [0 max(xlim)], 'r')
-
-%         p = polyfit(x, y, 1);
-%         x_ = [0 max(xlim)];
-%         y_  = p(1).*x_ + p(2);
-%         p1 = 4.299e-05;
-%         p2 = 0.9553;
-%         X = linspace(0, 3500, 1000);
-%         Y = p1.*X.^2 + p2.*X;
-%         plot(x_, y_, 'r')
 
         xlabel('V_M Expected from V_A and S')
         ylabel('V_M Measured By Camera')
